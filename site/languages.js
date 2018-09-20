@@ -9,14 +9,14 @@
 
 const languages = [
   {
-    enabled: false,
-    name: "日本語",
-    tag: "ja"
-  },
-  {
     enabled: true,
     name: "English",
     tag: "en"
+  },
+  {
+    enabled: false,
+    name: "日本語",
+    tag: "ja"
   },
   {
     enabled: false,
@@ -69,7 +69,7 @@ const languages = [
     tag: "fi"
   },
   {
-    enabled: true,
+    enabled: false,
     name: "Français",
     tag: "fr"
   },
@@ -139,7 +139,7 @@ const languages = [
     tag: "ro"
   },
   {
-    enabled: true,
+    enabled: false,
     name: "Русский",
     tag: "ru"
   },
@@ -174,7 +174,7 @@ const languages = [
     tag: "vi"
   },
   {
-    enabled: true,
+    enabled: false,
     name: "中文",
     tag: "zh-CN"
   },
