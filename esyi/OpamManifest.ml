@@ -34,14 +34,21 @@ end
 
 let readFiles (path : Path.t) () =
   let open RunAsync.Syntax in
+  print_endline ("READ FILES: " ^ (Path.show path));
   let filesPath = Path.(path / "files") in
+  let normalizeFileContent s =
+      Str.global_replace (Str.regexp_string("\r\n")) "\n" s
+  in
   if%bind Fs.isDir filesPath
   then
     let collect files filePath _fileStats =
       match Path.relativize ~root:filesPath filePath with
       | Some name ->
+        print_endline ("- NAME:" ^ (Path.show name));
         let%bind content = Fs.readFile filePath
         and stats = Fs.stat filePath in
+        let content = normalizeFileContent content in
+        let name = Path.show name in
         return ({Package.File. name; content; perm = stats.Unix.st_perm}::files)
       | None -> return files
     in

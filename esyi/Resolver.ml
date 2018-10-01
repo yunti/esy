@@ -166,6 +166,7 @@ let packageOfSource ~allowEmptyPackage ~name ~overrides (source : Source.t) reso
 
   let readPackage ~name ~source {SourceResolver. kind; filename; data} =
     let open RunAsync.Syntax in
+    print_endline ("READ PACKAGE: " ^ name);
     match kind with
     | ManifestSpec.Filename.Esy ->
       let%bind pkg = RunAsync.ofRun (

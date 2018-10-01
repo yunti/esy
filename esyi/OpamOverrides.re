@@ -79,6 +79,7 @@ let init = (~cfg, ()) : RunAsync.t(t) =>
 
 let load = baseDir => {
   open RunAsync.Syntax;
+  print_endline ("OVERIDE - BASE DIR: " ++ (Path.show(baseDir)));
   let packageJson = Path.(baseDir / "package.json");
   let filesPath = Path.(baseDir / "files");
   let%bind override =
@@ -92,14 +93,19 @@ let load = baseDir => {
       "Reading %a",
       Path.pp,
       packageJson,
-    );
+    );  
+let normalizeFileContent = (s) => Str.global_replace(Str.regexp_string("\r\n"), "\n", s);
   let%bind files =
     if%bind (Fs.exists(filesPath)) {
       let f = (files, path, _stat) =>
         switch (Path.relativize(~root=filesPath, path)) {
         | Some(name) =>
+            print_endline ("FILE: " ++ Path.show(name));
           let%bind content = Fs.readFile(path)
           and stat = Fs.stat(path);
+          let name = Path.normalizePathSlashes(Path.show(name));
+          print_endline("- normalized path? " ++ name);
+          let content = normalizeFileContent(content);
           let file = {Package.File.name, content, perm: stat.Unix.st_perm};
           return([file, ...files]);
         | None =>
