@@ -179,11 +179,22 @@ let resolve
       else return None
     end
 
+(* Some opam packages don't make sense for esy. *)
+let isEnabledForEsy name =
+  match OpamPackage.Name.to_string name with
+  | "ocaml-system" -> false
+  | _ -> true
+
 let versions ?ocamlVersion ~(name : OpamPackage.Name.t) registry =
   let open RunAsync.Syntax in
+
+  if not (isEnabledForEsy name)
+  then return []
+  else
+
   let%bind registry = initRegistry registry in
   match%bind getPackageVersionIndex registry ~name with
-  | None -> errorf "no opam package %s found" (OpamPackage.Name.to_string name)
+  | None -> return []
   | Some index ->
     let queue = LwtTaskQueue.create ~concurrency:2 () in
     let%bind resolutions =
@@ -199,6 +210,11 @@ let versions ?ocamlVersion ~(name : OpamPackage.Name.t) registry =
 
 let version ~(name : OpamPackage.Name.t) ~version registry =
   let open RunAsync.Syntax in
+
+  if not (isEnabledForEsy name)
+  then return None
+  else
+
   let%bind registry = initRegistry registry in
   match%bind resolve ~name ~version registry with
   | None -> return None
