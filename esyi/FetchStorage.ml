@@ -46,13 +46,14 @@ let fetch ~(cfg : Config.t) (record : Solution.Record.t) =
 let install ~cfg ~path dist =
   let open RunAsync.Syntax in
   let {Dist. source; record; sourceInStorage;} = dist in
-
   let finishInstall path =
 
     let%bind () =
       let f {Package.File. name; content; perm} =
-        let name = Path.append path name in
+          print_endline ("FetchStorage::install::() - " ^ name);
+        let name = Path.append path (Path.v name) in
         let dirname = Path.parent name in
+        print_endline (" - Creating dir: " ^ (Path.show dirname));
         let%bind () = Fs.createDir dirname in
         (* TODO: move this to the place we read data from *)
         let contents =
@@ -60,7 +61,9 @@ let install ~cfg ~path dist =
           then content
           else content ^ "\n"
         in
+        print_endline ("** Trying to write file: " ^ (Path.show name));
         let%bind () = Fs.writeFile ~perm ~data:contents name in
+        print_endline ("** WRITE SUCCESS: " ^ (Path.show name));
         return()
       in
       List.map ~f record.files |> RunAsync.List.waitAll
