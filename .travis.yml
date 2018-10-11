@@ -2,7 +2,7 @@ language: node_js
 node_js:
   - '8'
 install:
-  - npm install -g esy@0.2.8
+  - npm install -g esy@0.3.3
   - make bootstrap
 script:
   - make ci
@@ -17,6 +17,7 @@ matrix:
       dist: trusty
       sudo: required
     - os: osx
+    - os: windows
 
 deploy:
   provider: releases
