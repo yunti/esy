@@ -219,6 +219,7 @@ let rec findResolutionForRequest resolver req = function
     let version =
       match res.Resolution.resolution with
       | Version version -> version
+      | Link link -> Version.Source (Source.Link link)
       | SourceOverride {source;_} -> Version.Source source
     in
     if

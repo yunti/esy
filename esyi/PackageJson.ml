@@ -33,16 +33,20 @@ module DevDependenciesOfManifest = struct
   } [@@deriving of_yojson { strict = false }]
 end
 
-let rebaseDependencies source reqs =
+let rebaseDependencies (source : Source.t) reqs =
   let open Run.Syntax in
   let f req =
     match source, req.Req.spec with
-    | (Source.LocalPath {path = basePath; _} | Source.LocalPathLink {path = basePath; _}),
+    | (Source.Dist LocalPath {path = basePath; _}
+      | Source.Dist LocalPathLink {path = basePath; _}
+      | Source.Link {path = basePath; _}),
       VersionSpec.Source (SourceSpec.LocalPath {path; manifest;}) ->
       let path = Path.(basePath // path |> normalizeAndRemoveEmptySeg) in
       let spec = VersionSpec.Source (SourceSpec.LocalPath {path; manifest;}) in
       return (Req.make ~name:req.name ~spec)
-    | (Source.LocalPath {path = basePath; _} | Source.LocalPathLink {path = basePath; _}),
+    | (Source.Dist LocalPath {path = basePath; _}
+      | Source.Dist LocalPathLink {path = basePath; _}
+      | Source.Link {path = basePath; _}),
       VersionSpec.Source (SourceSpec.LocalPathLink {path; manifest;}) ->
       let path = Path.(basePath // path |> normalizeAndRemoveEmptySeg) in
       let spec = VersionSpec.Source (SourceSpec.LocalPathLink {path; manifest;}) in
@@ -59,7 +63,7 @@ let rebaseDependencies source reqs =
 let packageOfJson
   ?(parseResolutions=false)
   ?(parseDevDependencies=false)
-  ?source
+  ?(source : Source.t option)
   ~name
   ~version
   json =
@@ -71,14 +75,14 @@ let packageOfJson
     | None -> None
   in
 
-  let%bind source =
+  let%bind (source : Source.t) =
     match source, pkgJson.dist with
     | Some source, _ -> return source
     | None, Some dist ->
-      return (Source.Archive {
+      return (Source.Dist (Archive {
         url = dist.tarball;
         checksum = Checksum.Sha1, dist.shasum;
-      })
+      }))
     | None, None ->
       error "unable to determine package source, missing 'dist' metadata"
   in
@@ -87,9 +91,9 @@ let packageOfJson
   let dependencies =
     match pkgJson.esy with
     | None
-    | Some {EsyPackageJson. _dependenciesForNewEsyInstaller= None} ->
+    | Some {EsyPackageJson. _dependenciesForNewEsyInstaller = None} ->
       pkgJson.dependencies
-    | Some {EsyPackageJson. _dependenciesForNewEsyInstaller= Some dependencies} ->
+    | Some {EsyPackageJson. _dependenciesForNewEsyInstaller = Some dependencies} ->
       dependencies
   in
 
@@ -118,7 +122,7 @@ let packageOfJson
 
   let source =
     match source with
-    | Source.LocalPathLink {path; manifest;} ->
+    | Source.Link {path; manifest;} ->
       Package.Link {
         path;
         manifest;

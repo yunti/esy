@@ -3,7 +3,7 @@ module String = Astring.String
 module Dist = struct
   type t = {
     source : Source.t;
-    sourceInStorage : SourceStorage.source option;
+    archive : SourceStorage.archive option;
     pkg : Solution.Package.t;
   }
 
@@ -18,9 +18,11 @@ let fetch ~sandbox (pkg : Solution.Package.t) =
 
   let rec fetch' errs sources =
     match sources with
-    | source::rest ->
-      begin match%bind SourceStorage.fetch ~cfg:sandbox.Sandbox.cfg source with
-      | Ok sourceInStorage -> return {Dist. pkg; source; sourceInStorage = Some sourceInStorage;}
+    | (Source.Link _ as source)::_ ->
+      return {Dist. pkg; source; archive = None}
+    | (Source.Dist dist as source)::rest ->
+      begin match%bind SourceStorage.fetch ~cfg:sandbox.Sandbox.cfg dist with
+      | Ok archive -> return {Dist. pkg; source; archive = Some archive;}
       | Error err -> fetch' ((source, err)::errs) rest
       end
     | [] ->
@@ -42,8 +44,8 @@ let fetch ~sandbox (pkg : Solution.Package.t) =
   | Solution.Package.Link {path; manifest; overrides = _;} ->
     return {
       Dist. pkg;
-      source = Source.LocalPathLink {path;manifest;};
-      sourceInStorage = None;
+      source = Source.Link {path;manifest;};
+      archive = None;
     }
   | Solution.Package.Install {source = main, mirrors; _} ->
     fetch' [] (main::mirrors)
@@ -62,7 +64,7 @@ let unpack ~sandbox ~path ~overrides ~files ~opam dist =
    *)
 
   let%bind () =
-    match dist.Dist.sourceInStorage with
+    match dist.Dist.archive with
     | None ->
       return ()
     | Some sourceInStorage ->

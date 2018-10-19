@@ -1,6 +1,16 @@
 open Sexplib0.Sexp_conv
 
 type t =
+  | Link of link
+  | Dist of dist
+  [@@deriving ord, sexp_of]
+
+and link = {
+  path : Path.t;
+  manifest : ManifestSpec.t option;
+}
+
+and dist =
   | Archive of {
       url : string;
       checksum : Checksum.t;
@@ -25,20 +35,21 @@ type t =
       manifest : ManifestSpec.t option;
     }
   | NoSource
-  [@@deriving ord, sexp_of]
 
 let manifest (src : t) =
   match src with
-  | Git { manifest = Some manifest; _ } -> Some (ManifestSpec.One manifest)
-  | Git _ -> None
-  | Github { manifest = Some manifest; _ } -> Some (ManifestSpec.One manifest)
-  | Github _ -> None
-  | LocalPath info -> info.manifest
-  | LocalPathLink info -> info.manifest
-  | Archive _ -> None
-  | NoSource -> None
+  | Link { manifest = Some manifest; _ } -> Some manifest
+  | Link { manifest = None; _ } -> None
+  | Dist Git { manifest = Some manifest; _ } -> Some (ManifestSpec.One manifest)
+  | Dist Git _ -> None
+  | Dist Github { manifest = Some manifest; _ } -> Some (ManifestSpec.One manifest)
+  | Dist Github _ -> None
+  | Dist LocalPath info -> info.manifest
+  | Dist LocalPathLink info -> info.manifest
+  | Dist Archive _ -> None
+  | Dist NoSource -> None
 
-let show' ~showPath = function
+let showDist' ~showPath = function
   | Github {user; repo; commit; manifest = None;} ->
     Printf.sprintf "github:%s/%s#%s" user repo commit
   | Github {user; repo; commit; manifest = Some manifest;} ->
@@ -59,14 +70,27 @@ let show' ~showPath = function
     Printf.sprintf "link:%s/%s" (showPath path) (ManifestSpec.show manifest)
   | NoSource -> "no-source:"
 
+let show_dist = showDist' ~showPath:Path.show
+let show_distPretty = showDist' ~showPath:Path.showPretty
+
+let show' ~showPath = function
+  | Link {path; manifest = None} ->
+    Printf.sprintf "link:%s" (showPath path)
+  | Link {path; manifest = Some manifest} ->
+    Printf.sprintf "link:%s/%s" (showPath path) (ManifestSpec.show manifest)
+  | Dist dist -> showDist' ~showPath dist
+
 let show = show' ~showPath:Path.show
 let showPretty = show' ~showPath:Path.showPretty
 
-let pp fmt src =
-  Fmt.pf fmt "%s" (show src)
+let pp_dist fmt src =
+  Fmt.pf fmt "%s" (show_dist src)
 
-let ppPretty fmt src =
-  Fmt.pf fmt "%s" (showPretty src)
+let pp_distPretty fmt src =
+  Fmt.pf fmt "%s" (show_distPretty src)
+
+let pp fmt src = Fmt.pf fmt "%s" (show src)
+let ppPretty fmt src = Fmt.pf fmt "%s" (showPretty src)
 
 module Parse = struct
   include Parse
@@ -136,9 +160,15 @@ module Parse = struct
     in
     pathLike make
 
-  let link =
+  let linkDist =
     let make path manifest =
       LocalPathLink { path; manifest; }
+    in
+    pathLike make
+
+  let link =
+    let make path manifest =
+      Link { path; manifest; }
     in
     pathLike make
 
@@ -146,19 +176,27 @@ module Parse = struct
     let%bind () = ignore (string "no-source:") in
     return NoSource
 
-  let parser =
+  let dist =
     withPrefix "git:" git
     <|> withPrefix "github:" github
     <|> withPrefix "gh:" github
     <|> withPrefix "archive:" archive
     <|> withPrefix "path:" (path ~requirePathSep:false)
-    <|> withPrefix "link:" (link ~requirePathSep:false)
+    <|> withPrefix "link:" (linkDist ~requirePathSep:false)
     <|> noSource
 
-  let parserRelaxed =
+  let distRelaxed =
     archive
     <|> github
     <|> (path ~requirePathSep:true)
+
+  let parser =
+    let dist = let%map dist = dist in Dist dist in
+    dist <|> link ~requirePathSep:false
+
+  let parserRelaxed =
+    let dist = let%map dist = distRelaxed in Dist dist in
+    dist <|> link ~requirePathSep:false
 end
 
 let parser = Parse.parser
@@ -166,20 +204,25 @@ let parserRelaxed = Parse.parserRelaxed
 let parse = Parse.(parse parser)
 let parseRelaxed = Parse.(parse parserRelaxed)
 
-let to_yojson v =
-  `String (show v)
-
+let to_yojson v = `String (show v)
 let of_yojson json =
   match json with
-  | `String string ->
-    parse string
+  | `String v -> parse v
   | _ -> Error "expected string"
-
 let relaxed_of_yojson json =
   match json with
-  | `String string ->
-    let parse = Parse.(parse (parser <|> parserRelaxed)) in
-    parse string
+  | `String v -> Parse.(parse (parser <|> parserRelaxed)) v
+  | _ -> Error "expected string"
+
+let dist_to_yojson v = `String (show_dist v)
+let dist_of_yojson json =
+  match json with
+  | `String v -> Parse.(parse dist) v
+  | _ -> Error "expected string"
+
+let relaxed_dist_of_yojson json =
+  match json with
+  | `String v -> Parse.(parse (dist <|> distRelaxed)) v
   | _ -> Error "expected string"
 
 module Map = Map.Make(struct

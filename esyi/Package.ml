@@ -278,6 +278,7 @@ module Resolution = struct
 
   and resolution =
     | Version of Version.t
+    | Link of Source.link
     | SourceOverride of {source : Source.t; override : override}
 
   and override = {
@@ -329,6 +330,10 @@ module Resolution = struct
   and resolution_to_yojson resolution =
     match resolution with
     | Version v -> `String (Version.show v)
+    | Link {path; manifest = None;} ->
+      `String ("link:" ^ Path.show path)
+    | Link {path; manifest = Some manifest;} ->
+      `String ("link:" ^ Path.show path ^ "/" ^ ManifestSpec.show manifest)
     | SourceOverride {source; override} ->
       `Assoc [
         "source", Source.to_yojson source;
@@ -381,6 +386,10 @@ module Resolution = struct
     let resolution =
       match resolution with
       | Version version -> Version.show version
+      | Link {path; manifest = None} ->
+        "link:" ^ Path.show path
+      | Link {path; manifest = Some manifest} ->
+        "link:" ^ Path.show path ^ "/" ^ ManifestSpec.show manifest
       | SourceOverride { source; override = _; } ->
         Source.show source ^ "@" ^ digest r
     in

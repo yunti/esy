@@ -284,7 +284,7 @@ let fetch ~(sandbox : Sandbox.t) (solution : Solution.t) =
         let loc =
           let source = Dist.source dist in
           match source with
-          | Source.LocalPathLink {path; manifest = _} -> Path.(sandbox.spec.path // path)
+          | Source.Link {path; manifest = _} -> Path.(sandbox.spec.path // path)
           | _ -> install.Install.sourcePath;
         in
         Installation.add id loc installation

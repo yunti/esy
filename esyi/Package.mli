@@ -102,6 +102,7 @@ module Resolution : sig
 
   and resolution =
     | Version of Version.t
+    | Link of Source.link
     | SourceOverride of {source : Source.t; override : override}
 
   and override = {

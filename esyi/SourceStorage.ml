@@ -1,16 +1,16 @@
-type source = {tarballPath : Path.t;}
+type archive = {tarballPath : Path.t;}
 
-let sourceTarballPath ~cfg source =
+let sourceTarballPath ~cfg dist =
   let id =
-    Source.show source
+    Source.show_dist dist
     |> Digest.string
     |> Digest.to_hex
   in
   Path.(cfg.Config.cacheTarballsPath // v id |> addExt "tgz")
 
-let fetchSourceIntoPath source path =
+let fetchDist dist path =
   let open RunAsync.Syntax in
-  match source with
+  match dist with
 
   | Source.LocalPath { path = srcPath; manifest = _; } ->
     let%bind names = Fs.listDir srcPath in
@@ -67,9 +67,9 @@ let fetchSourceIntoPath source path =
     let%bind () = Fs.rmPath Path.(path / ".git") in
     return (Ok ())
 
-let fetchSourceIntoCache ~cfg source =
+let fetchIntoCache ~cfg (dist : Source.dist) =
   let open RunAsync.Syntax in
-  let tarballPath = sourceTarballPath ~cfg source in
+  let tarballPath = sourceTarballPath ~cfg dist in
 
   let%bind tarballIsInCache = Fs.exists tarballPath in
 
@@ -81,9 +81,9 @@ let fetchSourceIntoCache ~cfg source =
       let%bind fetched =
         RunAsync.contextf (
           let%bind () = Fs.createDir sourcePath in
-          fetchSourceIntoPath source sourcePath
+          fetchDist dist sourcePath
         )
-        "fetching %a" Source.pp source
+        "fetching %a" Source.pp_dist dist
       in
 
       match fetched with
@@ -99,17 +99,17 @@ let fetchSourceIntoCache ~cfg source =
       | Error err -> return (Error err)
     )
 
-let fetch ~cfg source =
+let fetch ~cfg dist =
   let open RunAsync.Syntax in
-  match%bind fetchSourceIntoCache ~cfg source with
+  match%bind fetchIntoCache ~cfg dist with
   | Ok tarballPath -> return (Ok {tarballPath;})
   | Error err -> return (Error err)
 
-let unpack ~cfg:_ ~dst source =
-  Tarball.unpack ~dst source.tarballPath
+let unpack ~cfg:_ ~dst archive =
+  Tarball.unpack ~dst archive.tarballPath
 
-let fetchAndUnpack ~cfg ~dst source =
+let fetchAndUnpack ~cfg ~dst dist =
   let open RunAsync.Syntax in
-  match%bind fetch ~cfg source with
-  | Ok source -> unpack ~cfg ~dst source
+  match%bind fetch ~cfg dist with
+  | Ok archive -> unpack ~cfg ~dst archive
   | Error err -> Lwt.return (Error err)

@@ -44,12 +44,12 @@ type state =
 let rebaseSource ~(base : Source.t) (source : Source.t) =
   let open Run.Syntax in
   match source, base with
-  | LocalPathLink _, _ -> error "link is not supported at manifest overrides"
-  | LocalPath info, LocalPath {path = basePath; _}
-  | LocalPath info, LocalPathLink {path = basePath; _} ->
+  | Dist LocalPathLink _, _ -> error "link is not supported at manifest overrides"
+  | Dist LocalPath info, Dist LocalPath {path = basePath; _}
+  | Dist LocalPath info, Dist LocalPathLink {path = basePath; _} ->
     let path = Path.(basePath // info.path |> normalizeAndRemoveEmptySeg) in
-    return (Source.LocalPath {info with path;})
-  | LocalPath _, _ -> failwith "TODO"
+    return (Source.Dist (LocalPath {info with path;}))
+  | Dist LocalPath _, _ -> failwith "TODO"
   | source, _ -> return source
 
 let suggestPackageName ~fallback (kind, filename) =
@@ -177,11 +177,12 @@ let resolve
   let resolve' (source : Source.t) =
     Logs_lwt.debug (fun m -> m "fetching metadata %a" Source.pp source);%lwt
     match source with
-    | LocalPath {path; manifest}
-    | LocalPathLink {path; manifest} ->
+    | Link {path; manifest}
+    | Dist LocalPath {path; manifest}
+    | Dist LocalPathLink {path; manifest} ->
       let%bind pkg = ofPath ?manifest Path.(root // path) in
       return (pkg, Some path)
-    | Git {remote; commit; manifest;} ->
+    | Dist Git {remote; commit; manifest;} ->
       let manifest = Option.map ~f:(fun m -> ManifestSpec.One m) manifest in
       Fs.withTempDir begin fun repo ->
         let%bind () = Git.clone ~dst:repo ~remote () in
@@ -189,22 +190,22 @@ let resolve
         let%bind pkg = ofPath ?manifest repo in
         return (pkg, None)
       end
-    | Github {user; repo; commit; manifest;} ->
+    | Dist Github {user; repo; commit; manifest;} ->
       let%bind pkg = ofGithub ?manifest user repo commit in
       return (pkg, None)
-    | Archive _ ->
+    | Dist (Archive _ as dist) ->
       Fs.withTempDir begin fun path ->
         let%bind () =
           SourceStorage.fetchAndUnpack
             ~cfg
             ~dst:path
-            source
+            dist
         in
         let%bind pkg = ofPath path in
       return (pkg, None)
       end
 
-    | NoSource ->
+    | Dist NoSource ->
       return (EmptyManifest, None)
   in
 
