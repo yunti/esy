@@ -1,3 +1,5 @@
+module Curl = CurlWrapper
+
 module PackageOverride = struct
   type t = {
     dist : Dist.t;

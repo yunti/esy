@@ -1,3 +1,5 @@
+module Curl = CurlWrapper
+
 type archive = {tarballPath : Path.t;}
 
 let sourceTarballPath ~cfg source =

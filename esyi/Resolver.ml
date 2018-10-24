@@ -108,13 +108,15 @@ let emptyInstall ~name ~source () =
   }
 
 let make ~cfg ~root () =
-  RunAsync.return {
+  let open RunAsync.Syntax in
+  let%bind npmRegistry = NpmRegistry.make ~url:cfg.Config.npmRegistry () in
+  return {
     cfg;
     root;
     pkgCache = PackageCache.make ();
     srcCache = SourceCache.make ();
     opamRegistry = OpamRegistry.make ~cfg ();
-    npmRegistry = NpmRegistry.make ~url:cfg.Config.npmRegistry ();
+    npmRegistry;
     ocamlVersion = None;
     resolutions = Package.Resolutions.empty;
     resolutionCache = ResolutionCache.make ();

@@ -567,9 +567,12 @@ let solveDependenciesNaively
     findFirstMatching (Hashtbl.find_all installed req.name)
   in
 
+  let count = ref 0  in
+
   let resolveOfOutside req =
+    count := !count + 1;
     let%lwt () =
-      let status = Format.asprintf "%a" Req.pp req in
+      let status = Format.asprintf "%i" !count in
       report status
     in
     let%bind resolutions = Resolver.resolve ~name:req.name ~spec:req.spec solver.resolver in

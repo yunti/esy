@@ -1,6 +1,6 @@
 {
-  "hash": "65762e91c8a329a2fb8025f6681eb38e",
-  "root": "esy@path:.",
+  "hash": "a36bc9d2bb0ac1feac03e4aefffb4646",
+  "root": "root@path:./package.json",
   "node": {
     "yauzl@2.10.0": {
       "record": {
@@ -12,6 +12,18 @@
         "opam": null
       },
       "dependencies": [ "buffer-crc32@0.2.13", "fd-slicer@1.1.0" ]
+    },
+    "yarn-pkg-config@github:esy-ocaml/yarn-pkg-config#d488cd9321cd5036bd36ec96744ce78c5d45fc49": {
+      "record": {
+        "name": "yarn-pkg-config",
+        "version":
+          "github:esy-ocaml/yarn-pkg-config#d488cd9321cd5036bd36ec96744ce78c5d45fc49",
+        "source":
+          "github:esy-ocaml/yarn-pkg-config#d488cd9321cd5036bd36ec96744ce78c5d45fc49",
+        "files": [],
+        "opam": null
+      },
+      "dependencies": []
     },
     "yargs-parser@9.0.2": {
       "record": {
@@ -692,7 +704,7 @@
         "opam": null
       },
       "dependencies": [
-        "chownr@1.1.1", "fs-minipass@1.2.5", "minipass@2.3.4",
+        "chownr@1.1.1", "fs-minipass@1.2.5", "minipass@2.3.5",
         "minizlib@1.1.1", "mkdirp@0.5.1", "safe-buffer@5.1.2",
         "yallist@3.0.2"
       ]
@@ -1355,6 +1367,41 @@
       },
       "dependencies": []
     },
+    "root@path:./package.json": {
+      "record": {
+        "name": "root",
+        "version": "path:./package.json",
+        "source": "path:./package.json",
+        "files": [],
+        "opam": null
+      },
+      "dependencies": [
+        "@esy-ocaml/esy-installer@0.0.1", "@esy-ocaml/merlin@3.0.5005",
+        "@esy-ocaml/reason@3.2.0",
+        "@opam/angstrom@github:esy-ocaml/angstrom#b3a125f",
+        "@opam/bos@opam:0.2.0", "@opam/cmdliner@opam:1.0.2",
+        "@opam/cudf@opam:0.9", "@opam/dose3@opam:5.0.1",
+        "@opam/dune@opam:1.4.0", "@opam/fmt@opam:0.8.5",
+        "@opam/fpath@opam:0.7.2", "@opam/lambda-term@opam:1.13",
+        "@opam/logs@opam:0.6.2", "@opam/lwt@opam:4.1.0",
+        "@opam/lwt_ppx@opam:1.2.1", "@opam/menhir@opam:20171013",
+        "@opam/ocurl@opam:0.8.2", "@opam/opam-core@opam:2.0.0",
+        "@opam/opam-file-format@opam:2.0.0", "@opam/opam-format@opam:2.0.0",
+        "@opam/opam-state@opam:2.0.0", "@opam/ppx_deriving@opam:4.2.1",
+        "@opam/ppx_deriving_yojson@opam:3.1",
+        "@opam/ppx_expect@opam:v0.11.0",
+        "@opam/ppx_inline_test@opam:v0.11.0", "@opam/ppx_let@opam:v0.11.0",
+        "@opam/ppx_sexp_conv@opam:v0.11.2", "@opam/re@opam:1.8.0",
+        "@opam/utop@opam:2.2.0", "@opam/yojson@opam:1.4.1",
+        "babel-preset-env@1.7.0", "babel-preset-flow@6.23.0", "del@3.0.0",
+        "esy-bash@0.1.24", "esy-solve-cudf@0.1.8",
+        "fastreplacestring@github:esy-ocaml/FastReplaceString#95f408b",
+        "flow-bin@0.77.0", "fs-extra@7.0.0", "jest-cli@23.6.0", "klaw@2.1.1",
+        "minimatch@3.0.4", "ocaml@4.6.7", "outdent@0.3.0", "prettier@1.14.3",
+        "rimraf@2.6.2", "semver@5.6.0", "super-resolve@1.0.0", "tar@4.4.6",
+        "tar-fs@1.16.3", "tmp@0.0.33"
+      ]
+    },
     "rimraf@2.6.2": {
       "record": {
         "name": "rimraf",
@@ -1493,7 +1540,7 @@
         "combined-stream@1.0.7", "extend@3.0.2", "forever-agent@0.6.1",
         "form-data@2.3.3", "har-validator@5.1.0", "http-signature@1.2.0",
         "is-typedarray@1.0.0", "isstream@0.1.2", "json-stringify-safe@5.0.1",
-        "mime-types@2.1.20", "oauth-sign@0.9.0", "performance-now@2.1.0",
+        "mime-types@2.1.21", "oauth-sign@0.9.0", "performance-now@2.1.0",
         "qs@6.5.2", "safe-buffer@5.1.2", "tough-cookie@2.4.3",
         "tunnel-agent@0.6.0", "uuid@3.3.2"
       ]
@@ -1699,12 +1746,12 @@
         "strip-json-comments@2.0.1"
       ]
     },
-    "randomatic@3.1.0": {
+    "randomatic@3.1.1": {
       "record": {
         "name": "randomatic",
-        "version": "3.1.0",
+        "version": "3.1.1",
         "source":
-          "archive:https://registry.npmjs.org/randomatic/-/randomatic-3.1.0.tgz#sha1:36f2ca708e9e567f5ed2ec01949026d50aa10116",
+          "archive:https://registry.npmjs.org/randomatic/-/randomatic-3.1.1.tgz#sha1:b776efc59375984e36c537b2f51a1f0aff0da1ed",
         "files": [],
         "opam": null
       },
@@ -1962,7 +2009,7 @@
         "name": "pify",
         "version": "2.3.0",
         "source":
-          "archive:https://registry.npmjs.org/pify/-/pify-2.3.0.tgz#sha1:ed141a6ac043a849ea588498e7dca8b15330e90c",
+          "archive:http://registry.npmjs.org/pify/-/pify-2.3.0.tgz#sha1:ed141a6ac043a849ea588498e7dca8b15330e90c",
         "files": [],
         "opam": null
       },
@@ -2551,12 +2598,12 @@
         "semver@5.6.0", "tar@4.4.6"
       ]
     },
-    "node-notifier@5.2.1": {
+    "node-notifier@5.3.0": {
       "record": {
         "name": "node-notifier",
-        "version": "5.2.1",
+        "version": "5.3.0",
         "source":
-          "archive:https://registry.npmjs.org/node-notifier/-/node-notifier-5.2.1.tgz#sha1:fa313dd08f5517db0e2502e5758d664ac69f9dea",
+          "archive:https://registry.npmjs.org/node-notifier/-/node-notifier-5.3.0.tgz#sha1:c77a4a7b84038733d5fb351aafd8a268bfe19a01",
         "files": [],
         "opam": null
       },
@@ -2677,14 +2724,14 @@
         "files": [],
         "opam": null
       },
-      "dependencies": [ "minipass@2.3.4" ]
+      "dependencies": [ "minipass@2.3.5" ]
     },
-    "minipass@2.3.4": {
+    "minipass@2.3.5": {
       "record": {
         "name": "minipass",
-        "version": "2.3.4",
+        "version": "2.3.5",
         "source":
-          "archive:https://registry.npmjs.org/minipass/-/minipass-2.3.4.tgz#sha1:4768d7605ed6194d6d576169b9e12ef71e9d9957",
+          "archive:https://registry.npmjs.org/minipass/-/minipass-2.3.5.tgz#sha1:cacebe492022497f656b0f0f51e2682a9ed2d848",
         "files": [],
         "opam": null
       },
@@ -2756,23 +2803,23 @@
       },
       "dependencies": []
     },
-    "mime-types@2.1.20": {
+    "mime-types@2.1.21": {
       "record": {
         "name": "mime-types",
-        "version": "2.1.20",
+        "version": "2.1.21",
         "source":
-          "archive:https://registry.npmjs.org/mime-types/-/mime-types-2.1.20.tgz#sha1:930cb719d571e903738520f8470911548ca2cc19",
+          "archive:https://registry.npmjs.org/mime-types/-/mime-types-2.1.21.tgz#sha1:28995aa1ecb770742fe6ae7e58f9181c744b3f96",
         "files": [],
         "opam": null
       },
-      "dependencies": [ "mime-db@1.36.0" ]
+      "dependencies": [ "mime-db@1.37.0" ]
     },
-    "mime-db@1.36.0": {
+    "mime-db@1.37.0": {
       "record": {
         "name": "mime-db",
-        "version": "1.36.0",
+        "version": "1.37.0",
         "source":
-          "archive:https://registry.npmjs.org/mime-db/-/mime-db-1.36.0.tgz#sha1:5020478db3c7fe93aad7bbcc4dcf869c43363397",
+          "archive:https://registry.npmjs.org/mime-db/-/mime-db-1.37.0.tgz#sha1:0b6a0ce6fdbe9576e25f1f2d2fde8830dc0ad0d8",
         "files": [],
         "opam": null
       },
@@ -3519,7 +3566,7 @@
         "name": "jest-get-type",
         "version": "22.4.3",
         "source":
-          "archive:https://registry.npmjs.org/jest-get-type/-/jest-get-type-22.4.3.tgz#sha1:e3a8504d8479342dd4420236b322869f18900ce4",
+          "archive:http://registry.npmjs.org/jest-get-type/-/jest-get-type-22.4.3.tgz#sha1:e3a8504d8479342dd4420236b322869f18900ce4",
         "files": [],
         "opam": null
       },
@@ -3623,7 +3670,7 @@
         "jest-regex-util@23.3.0", "jest-resolve-dependencies@23.6.0",
         "jest-runner@23.6.0", "jest-runtime@23.6.0", "jest-snapshot@23.6.0",
         "jest-util@23.4.0", "jest-validate@23.6.0", "jest-watcher@23.4.0",
-        "jest-worker@23.2.0", "micromatch@2.3.11", "node-notifier@5.2.1",
+        "jest-worker@23.2.0", "micromatch@2.3.11", "node-notifier@5.3.0",
         "prompts@0.1.14", "realpath-native@1.0.2", "rimraf@2.6.2",
         "slash@1.0.0", "string-length@2.0.0", "strip-ansi@4.0.0",
         "which@1.3.1", "yargs@11.1.0"
@@ -4850,7 +4897,7 @@
         "files": [],
         "opam": null
       },
-      "dependencies": [ "minipass@2.3.4" ]
+      "dependencies": [ "minipass@2.3.5" ]
     },
     "fs-extra@7.0.0": {
       "record": {
@@ -4908,7 +4955,7 @@
         "opam": null
       },
       "dependencies": [
-        "asynckit@0.4.0", "combined-stream@1.0.7", "mime-types@2.1.20"
+        "asynckit@0.4.0", "combined-stream@1.0.7", "mime-types@2.1.21"
       ]
     },
     "forever-agent@0.6.1": {
@@ -5001,7 +5048,7 @@
         "opam": null
       },
       "dependencies": [
-        "is-number@2.1.0", "isobject@2.1.0", "randomatic@3.1.0",
+        "is-number@2.1.0", "isobject@2.1.0", "randomatic@3.1.1",
         "repeat-element@1.1.3", "repeat-string@1.6.1"
       ]
     },
@@ -5263,7 +5310,7 @@
         "files": [],
         "opam": null
       },
-      "dependencies": [ "mime-db@1.36.0" ]
+      "dependencies": [ "mime-db@1.37.0" ]
     },
     "expect@23.6.0": {
       "record": {
@@ -5375,41 +5422,6 @@
         "opam": null
       },
       "dependencies": [ "download@7.1.0", "mkdirp@0.5.1" ]
-    },
-    "esy@path:.": {
-      "record": {
-        "name": "esy",
-        "version": "path:.",
-        "source": "path:.",
-        "files": [],
-        "opam": null
-      },
-      "dependencies": [
-        "@esy-ocaml/esy-installer@0.0.1", "@esy-ocaml/merlin@3.0.5005",
-        "@esy-ocaml/reason@3.2.0",
-        "@opam/angstrom@github:esy-ocaml/angstrom#b3a125f",
-        "@opam/bos@opam:0.2.0", "@opam/cmdliner@opam:1.0.2",
-        "@opam/cudf@opam:0.9", "@opam/dose3@opam:5.0.1",
-        "@opam/dune@opam:1.4.0", "@opam/fmt@opam:0.8.5",
-        "@opam/fpath@opam:0.7.2", "@opam/lambda-term@opam:1.13",
-        "@opam/logs@opam:0.6.2", "@opam/lwt@opam:4.1.0",
-        "@opam/lwt_ppx@opam:1.2.1", "@opam/menhir@opam:20171013",
-        "@opam/opam-core@opam:2.0.0", "@opam/opam-file-format@opam:2.0.0",
-        "@opam/opam-format@opam:2.0.0", "@opam/opam-state@opam:2.0.0",
-        "@opam/ppx_deriving@opam:4.2.1",
-        "@opam/ppx_deriving_yojson@opam:3.1",
-        "@opam/ppx_expect@opam:v0.11.0",
-        "@opam/ppx_inline_test@opam:v0.11.0", "@opam/ppx_let@opam:v0.11.0",
-        "@opam/ppx_sexp_conv@opam:v0.11.2", "@opam/re@opam:1.8.0",
-        "@opam/utop@opam:2.2.0", "@opam/yojson@opam:1.4.1",
-        "babel-preset-env@1.7.0", "babel-preset-flow@6.23.0", "del@3.0.0",
-        "esy-bash@0.1.24", "esy-solve-cudf@0.1.8",
-        "fastreplacestring@github:esy-ocaml/FastReplaceString#95f408b",
-        "flow-bin@0.77.0", "fs-extra@7.0.0", "jest-cli@23.6.0", "klaw@2.1.1",
-        "minimatch@3.0.4", "ocaml@4.6.7", "outdent@0.3.0", "prettier@1.14.3",
-        "rimraf@2.6.2", "semver@5.6.0", "super-resolve@1.0.0", "tar@4.4.6",
-        "tar-fs@1.16.3", "tmp@0.0.33"
-      ]
     },
     "esutils@2.0.2": {
       "record": {
@@ -5529,12 +5541,12 @@
       },
       "dependencies": [ "once@1.4.0" ]
     },
-    "electron-to-chromium@1.3.79": {
+    "electron-to-chromium@1.3.81": {
       "record": {
         "name": "electron-to-chromium",
-        "version": "1.3.79",
+        "version": "1.3.81",
         "source":
-          "archive:https://registry.npmjs.org/electron-to-chromium/-/electron-to-chromium-1.3.79.tgz#sha1:774718f06284a4bf8f578ac67e74508fe659f13a",
+          "archive:https://registry.npmjs.org/electron-to-chromium/-/electron-to-chromium-1.3.81.tgz#sha1:32af69206ef78973b6a6771b0c8450c2ce253913",
         "files": [],
         "opam": null
       },
@@ -6240,12 +6252,12 @@
       },
       "dependencies": [ "rsvp@3.6.2" ]
     },
-    "caniuse-lite@1.0.30000893": {
+    "caniuse-lite@1.0.30000898": {
       "record": {
         "name": "caniuse-lite",
-        "version": "1.0.30000893",
+        "version": "1.0.30000898",
         "source":
-          "archive:https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30000893.tgz#sha1:284b20932bd41b93e21626975f2050cb01561986",
+          "archive:https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30000898.tgz#sha1:651306e690ca83caca5814da5afa3eb4de0f86c2",
         "files": [],
         "opam": null
       },
@@ -6404,7 +6416,7 @@
         "opam": null
       },
       "dependencies": [
-        "caniuse-lite@1.0.30000893", "electron-to-chromium@1.3.79"
+        "caniuse-lite@1.0.30000898", "electron-to-chromium@1.3.81"
       ]
     },
     "browser-resolve@1.11.3": {
@@ -8588,6 +8600,29 @@
         "@opam/re@opam:1.8.0", "ocaml@4.6.7"
       ]
     },
+    "@opam/ocurl@opam:0.8.2": {
+      "record": {
+        "name": "@opam/ocurl",
+        "version": "opam:0.8.2",
+        "source": [
+          "archive:http://ygrek.org.ua/p/release/ocurl/ocurl-0.8.2.tar.gz#md5:194b65b5abb1e32be17f4d5c8c9a8627",
+          "archive:https://github.com/ygrek/ocurl/releases/download/0.8.2/ocurl-0.8.2.tar.gz#md5:194b65b5abb1e32be17f4d5c8c9a8627"
+        ],
+        "files": [],
+        "opam": {
+          "name": "ocurl",
+          "version": "0.8.2",
+          "opam":
+            "opam-version: \"2.0\"\nname: \"ocurl\"\nversion: \"0.8.2\"\nsynopsis: \"Bindings to libcurl\"\ndescription: \"\"\"\nClient-side URL transfer library, supporting HTTP and a multitude of\nother network protocols (FTP/SMTP/RTSP/etc).\"\"\"\nmaintainer: \"ygrek@autistici.org\"\nauthors: [\"Lars Nilsson\" \"ygrek\"]\nlicense: \"MIT\"\ntags: [\"org:ygrek\" \"clib:curl\"]\nhomepage: \"http://ygrek.org.ua/p/ocurl/\"\ndoc: \"http://ygrek.org.ua/p/ocurl/api/index.html\"\nbug-reports: \"https://github.com/ygrek/ocurl/issues\"\ndepends: [\n  \"ocaml\" {>= \"4.02.0\"}\n  \"ocamlfind\" {build}\n  \"base-unix\"\n  \"conf-libcurl\"\n]\ndepopts: [\"lwt\"]\nflags: light-uninstall\nbuild: [\n  [\"./configure\"]\n  [make]\n  [make \"test\"] {with-test}\n  [make \"doc\"] {with-doc}\n]\ninstall: [make \"install\"]\nremove: [\"ocamlfind\" \"remove\" \"curl\"]\ndev-repo: \"git://github.com/ygrek/ocurl.git\"\nurl {\n  src: \"http://ygrek.org.ua/p/release/ocurl/ocurl-0.8.2.tar.gz\"\n  checksum: \"md5=194b65b5abb1e32be17f4d5c8c9a8627\"\n  mirrors:\n    \"https://github.com/ygrek/ocurl/releases/download/0.8.2/ocurl-0.8.2.tar.gz\"\n}",
+          "override": null
+        }
+      },
+      "dependencies": [
+        "@esy-ocaml/substs@0.0.1", "@opam/base-unix@opam:base",
+        "@opam/conf-libcurl@opam:1", "@opam/ocamlfind@opam:1.8.0",
+        "ocaml@4.6.7"
+      ]
+    },
     "@opam/ocamlgraph@opam:1.8.8": {
       "record": {
         "name": "@opam/ocamlgraph",
@@ -8664,7 +8699,8 @@
             "exportedEnv": {
               "OCAML_TOPLEVEL_PATH": {
                 "val": "#{self.toplevel}",
-                "scope": "global"
+                "scope": "global",
+                "exclusive": false
               }
             }
           }
@@ -9049,20 +9085,20 @@
         "@opam/ppxlib@opam:0.3.1", "ocaml@4.6.7"
       ]
     },
-    "@opam/extlib-compat@opam:1.7.2": {
+    "@opam/extlib@opam:1.7.5": {
       "record": {
-        "name": "@opam/extlib-compat",
-        "version": "opam:1.7.2",
+        "name": "@opam/extlib",
+        "version": "opam:1.7.5",
         "source": [
-          "archive:http://ygrek.org.ua/p/release/ocaml-extlib/extlib-1.7.2.tar.gz#md5:0f550dd06242828399a73387c49e0eed",
-          "archive:https://github.com/ygrek/ocaml-extlib/releases/download/1.7.2/extlib-1.7.2.tar.gz#md5:0f550dd06242828399a73387c49e0eed"
+          "archive:http://ygrek.org.ua/p/release/ocaml-extlib/extlib-1.7.5.tar.gz#md5:d989951536077563bf4c5e3479c3866f",
+          "archive:https://github.com/ygrek/ocaml-extlib/releases/download/1.7.5/extlib-1.7.5.tar.gz#md5:d989951536077563bf4c5e3479c3866f"
         ],
         "files": [],
         "opam": {
-          "name": "extlib-compat",
-          "version": "1.7.2",
+          "name": "extlib",
+          "version": "1.7.5",
           "opam":
-            "opam-version: \"2.0\"\nname: \"extlib-compat\"\nversion: \"1.7.2\"\nsynopsis:\n  \"A complete yet small extension for OCaml standard library (full, compatibility)\"\ndescription: \"\"\"\nThe purpose of this library is to add new functions to OCaml standard library\nmodules, to modify some functions in order to get better performances or\nsafety (tail-recursive) and also to provide new modules which should be useful\nfor day to day programming.\"\"\"\nmaintainer: \"ygrek@autistici.org\"\nauthors: [\n  \"Nicolas Cannasse\"\n  \"Brian Hurt\"\n  \"Yamagata Yoriyuki\"\n  \"Markus Mottl\"\n  \"Jesse Guardiani\"\n  \"John Skaller\"\n  \"Bardur Arantsson\"\n  \"Janne Hellsten\"\n  \"Richard W.M. Jones\"\n  \"ygrek\"\n  \"Gabriel Scherer\"\n  \"Pietro Abate\"\n]\nlicense: \"LGPL-2.1 with OCaml linking exception\"\nhomepage: \"https://github.com/ygrek/ocaml-extlib\"\ndoc: \"http://ygrek.org.ua/p/extlib/doc/\"\nbug-reports: \"https://github.com/ygrek/ocaml-extlib/issues\"\ndepends: [\n  \"ocaml\" {< \"4.07.0\"}\n  \"ocamlfind\" {build}\n  \"cppo\" {build}\n  \"base-bytes\" {build}\n]\nconflicts: [\"extlib\"]\nflags: light-uninstall\nbuild: [\n  [make \"build\"]\n  [make \"test\"] {with-test}\n  [make \"doc\"] {with-doc}\n]\ninstall: [make \"install\"]\nremove: [\"ocamlfind\" \"remove\" \"extlib\"]\ndev-repo: \"git://github.com/ygrek/ocaml-extlib.git\"\nurl {\n  src: \"http://ygrek.org.ua/p/release/ocaml-extlib/extlib-1.7.2.tar.gz\"\n  checksum: \"md5=0f550dd06242828399a73387c49e0eed\"\n  mirrors:\n    \"https://github.com/ygrek/ocaml-extlib/releases/download/1.7.2/extlib-1.7.2.tar.gz\"\n}",
+            "opam-version: \"2.0\"\nname: \"extlib\"\nversion: \"1.7.5\"\nsynopsis:\n  \"A complete yet small extension for OCaml standard library (reduced, recommended)\"\ndescription: \"\"\"\nThe purpose of this library is to add new functions to OCaml standard library\nmodules, to modify some functions in order to get better performances or\nsafety (tail-recursive) and also to provide new modules which should be useful\nfor day to day programming.\"\"\"\nmaintainer: \"ygrek@autistici.org\"\nauthors: [\n  \"Nicolas Cannasse\"\n  \"Brian Hurt\"\n  \"Yamagata Yoriyuki\"\n  \"Markus Mottl\"\n  \"Jesse Guardiani\"\n  \"John Skaller\"\n  \"Bardur Arantsson\"\n  \"Janne Hellsten\"\n  \"Richard W.M. Jones\"\n  \"ygrek\"\n  \"Gabriel Scherer\"\n  \"Pietro Abate\"\n]\nlicense: \"LGPL-2.1 with OCaml linking exception\"\nhomepage: \"https://github.com/ygrek/ocaml-extlib\"\ndoc: \"http://ygrek.org.ua/p/extlib/doc/\"\nbug-reports: \"https://github.com/ygrek/ocaml-extlib/issues\"\ndepends: [\n  \"ocaml\"\n  \"ocamlfind\" {build}\n  \"cppo\" {build}\n  \"base-bytes\" {build}\n]\nflags: light-uninstall\nbuild: [\n  [make \"minimal=1\" \"build\"]\n  [make \"minimal=1\" \"test\"] {with-test}\n  [make \"minimal=1\" \"doc\"] {with-doc}\n]\ninstall: [make \"minimal=1\" \"install\"]\nremove: [\"ocamlfind\" \"remove\" \"extlib\"]\ndev-repo: \"git://github.com/ygrek/ocaml-extlib.git\"\nurl {\n  src: \"http://ygrek.org.ua/p/release/ocaml-extlib/extlib-1.7.5.tar.gz\"\n  checksum: \"md5=d989951536077563bf4c5e3479c3866f\"\n  mirrors:\n    \"https://github.com/ygrek/ocaml-extlib/releases/download/1.7.5/extlib-1.7.5.tar.gz\"\n}",
           "override": null
         }
       },
@@ -9168,7 +9204,7 @@
       "dependencies": [
         "@esy-ocaml/substs@0.0.1", "@opam/conf-perl@opam:1",
         "@opam/cppo@opam:1.6.5", "@opam/cudf@opam:0.9",
-        "@opam/extlib-compat@opam:1.7.2", "@opam/ocamlbuild@opam:0.12.0",
+        "@opam/extlib@opam:1.7.5", "@opam/ocamlbuild@opam:0.12.0",
         "@opam/ocamlgraph@opam:1.8.8", "@opam/re@opam:1.8.0", "ocaml@4.6.7"
       ]
     },
@@ -9189,7 +9225,7 @@
       },
       "dependencies": [
         "@esy-ocaml/substs@0.0.1", "@opam/conf-perl@opam:1",
-        "@opam/extlib-compat@opam:1.7.2", "@opam/ocamlbuild@opam:0.12.0",
+        "@opam/extlib@opam:1.7.5", "@opam/ocamlbuild@opam:0.12.0",
         "ocaml@4.6.7"
       ]
     },
@@ -9250,6 +9286,30 @@
       },
       "dependencies": [ "@esy-ocaml/substs@0.0.1" ]
     },
+    "@opam/conf-pkg-config@opam:1.1": {
+      "record": {
+        "name": "@opam/conf-pkg-config",
+        "version": "opam:1.1",
+        "source": "no-source:",
+        "files": [],
+        "opam": {
+          "name": "conf-pkg-config",
+          "version": "1.1",
+          "opam":
+            "opam-version: \"2.0\"\nname: \"conf-pkg-config\"\nversion: \"1.1\"\nsynopsis: \"Virtual package relying on pkg-config installation\"\ndescription: \"\"\"\nThis package can only install if the pkg-config package is installed\non the system.\"\"\"\nmaintainer: \"unixjunkie@sdf.org\"\nauthors: \"Francois Berenger\"\nlicense: \"GPL\"\nhomepage: \"http://www.freedesktop.org/wiki/Software/pkg-config/\"\nbug-reports: \"https://github.com/ocaml/opam-repository/issues\"\nflags: light-uninstall\nbuild: [\"pkg-config\" \"--help\"]\ninstall:\n  [\"ln\" \"-s\" \"/usr/local/bin/pkgconf\" \"%{bin}%/pkg-config\"] {os = \"openbsd\"}\nremove: [\"rm\" \"-f\" \"%{bin}%/pkg-config\"] {os = \"openbsd\"}\npost-messages:\n  \"conf-pkg-config: A symlink to /usr/local/bin/pkgconf has been installed in the OPAM bin directory (%{bin}%) on your PATH as 'pkg-config'. This is necessary for correct operation.\"\n    {os = \"openbsd\"}\ndepexts: [\n  [\"pkg-config\"] {os-distribution = \"debian\"}\n  [\"pkg-config\"] {os-distribution = \"ubuntu\"}\n  [\"pkg-config\"] {os-distribution = \"archlinux\"}\n  [\"pkgconfig\"] {os-distribution = \"fedora\"}\n  [\"pkgconfig\"] {os-distribution = \"centos\"}\n  [\"pkgconfig\"] {os-distribution = \"mageia\"}\n  [\"pkgconfig\"] {os-distribution = \"rhel\"}\n  [\"pkgconfig\"] {os-distribution = \"oraclelinux\"}\n  [\"pkgconfig\"] {os-distribution = \"alpine\"}\n  [\"devel/pkgconf\"] {os = \"freebsd\"}\n  [\"devel/pkgconf\"] {os = \"openbsd\"}\n  [\"pkg-config\"] {os = \"macos\" & os-distribution = \"homebrew\"}\n  [\"pkgconf\"] {os = \"freebsd\"}\n]",
+          "override": {
+            "dependencies": {
+              "yarn-pkg-config":
+                "github:esy-ocaml/yarn-pkg-config#d488cd9321cd5036bd36ec96744ce78c5d45fc49"
+            }
+          }
+        }
+      },
+      "dependencies": [
+        "@esy-ocaml/substs@0.0.1",
+        "yarn-pkg-config@github:esy-ocaml/yarn-pkg-config#d488cd9321cd5036bd36ec96744ce78c5d45fc49"
+      ]
+    },
     "@opam/conf-perl@opam:1": {
       "record": {
         "name": "@opam/conf-perl",
@@ -9281,6 +9341,24 @@
         }
       },
       "dependencies": [ "@esy-ocaml/substs@0.0.1" ]
+    },
+    "@opam/conf-libcurl@opam:1": {
+      "record": {
+        "name": "@opam/conf-libcurl",
+        "version": "opam:1",
+        "source": "no-source:",
+        "files": [],
+        "opam": {
+          "name": "conf-libcurl",
+          "version": "1",
+          "opam":
+            "opam-version: \"2.0\"\nname: \"conf-libcurl\"\nversion: \"1\"\nsynopsis: \"Virtual package relying on a libcurl system installation\"\ndescription:\n  \"This package can only install if the libcurl is installed on the system.\"\nmaintainer: \"blue-prawn\"\nauthors: \"Daniel Stenberg\"\nlicense: \"BSD-like\"\nhomepage: \"http://curl.haxx.se/\"\nbug-reports: \"https://github.com/ocaml/opam-repository/issues\"\ndepends: [\n  \"conf-pkg-config\" {build & os != \"macos\"}\n]\nbuild: [\"pkg-config\" \"libcurl\"] {os != \"macos\"}\ndepexts: [\n  [\"libcurl4-gnutls-dev\"] {os-distribution = \"debian\"}\n  [\"libcurl-devel\"] {os-distribution = \"mageia\"}\n  [\"libcurl4-gnutls-dev\"] {os-distribution = \"ubuntu\"}\n  [\"libcurl-devel\" \"openssl-devel\"] {os-distribution = \"centos\"}\n  [\"curl\"] {os-distribution = \"nixos\"}\n  [\"curl\"] {os-distribution = \"archlinux\"}\n  [\"curl-dev\"] {os-distribution = \"alpine\"}\n  [\"libcurl-devel\"] {os-distribution = \"opensuse\"}\n  [\"libcurl-devel\"] {os-distribution = \"fedora\"}\n]",
+          "override": null
+        }
+      },
+      "dependencies": [
+        "@esy-ocaml/substs@0.0.1", "@opam/conf-pkg-config@opam:1.1"
+      ]
     },
     "@opam/cmdliner@opam:1.0.2": {
       "record": {

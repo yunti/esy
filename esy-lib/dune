@@ -3,6 +3,8 @@
   (flags (:standard (-w -39)))
   (inline_tests)
   (libraries
+            curl
+            curl.lwt
             angstrom
             lwt
             lwt.unix

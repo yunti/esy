@@ -1,5 +1,10 @@
 module String = Astring.String
 
+module Native = struct
+  include Curl
+  include Curl_lwt
+end
+
 module Meta = struct
   type t = {code : int} [@@deriving of_yojson]
 end

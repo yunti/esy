@@ -1,3 +1,5 @@
+module Curl = CurlWrapper
+
 type t = {
   index : record StringMap.t;
   cacheKey : (string option [@default None]);

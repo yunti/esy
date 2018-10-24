@@ -9,7 +9,7 @@ val make :
   ?concurrency:int
   -> ?url:string
   -> unit
-  -> t
+  -> t RunAsync.t
 
 val versions :
   ?fullMetadata:bool
