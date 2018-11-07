@@ -18,6 +18,10 @@ steps:
 
   - script: 'esy test:e2e-slow'
     displayName: 'esy test:e2e-slow'
+    continueOnError: true
+
+  - script: 'df -h'
+    displayName: 'df -h'
 
   - script: 'esy platform-release'
     displayName: 'esy platform-release'
