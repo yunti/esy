@@ -13,8 +13,8 @@ steps:
   - script: 'esy build'
     displayName: 'esy build'
 
-  - script: 'esy test:e2e'
-    displayName: 'esy test:e2e'
+  # - script: 'esy test:e2e'
+  #   displayName: 'esy test:e2e'
 
   - script: 'esy test:e2e-slow'
     displayName: 'esy test:e2e-slow'
