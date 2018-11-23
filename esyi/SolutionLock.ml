@@ -1,8 +1,6 @@
 type source =
-  | Link of {
-      path : DistPath.t;
-      manifest : ManifestSpec.t option;
-    }
+  | Link of Source.link
+  | Include of Source.link
   | Install of {
       source : Dist.t * Dist.t list;
       opam : OpamResolution.Lock.t option;
@@ -11,6 +9,12 @@ type source =
 let source_to_yojson source =
   let open Json.Encode in
   match source with
+  | Include { path; manifest } ->
+    assoc [
+      field "type" string "include";
+      field "path" DistPath.to_yojson path;
+      fieldOpt "manifest" ManifestSpec.to_yojson manifest;
+    ]
   | Link { path; manifest } ->
     assoc [
       field "type" string "link";
@@ -40,6 +44,10 @@ let source_of_yojson json =
     let%bind path = fieldWith ~name:"path" DistPath.of_yojson json in
     let%bind manifest = fieldOptWith ~name:"manifest" ManifestSpec.of_yojson json in
     Ok (Link {path; manifest;})
+  | "include" ->
+    let%bind path = fieldWith ~name:"path" DistPath.of_yojson json in
+    let%bind manifest = fieldOptWith ~name:"manifest" ManifestSpec.of_yojson json in
+    Ok (Include {path; manifest;})
   | typ -> errorf "unknown source type: %s" typ
 
 type t = {
@@ -77,7 +85,8 @@ let ofPackage sandbox (pkg : Solution.Package.t) =
   let open RunAsync.Syntax in
   let%bind source =
     match pkg.source with
-    | Solution.Package.Link { path; manifest } -> return (Link {path; manifest;})
+    | Solution.Package.Link link -> return (Link link)
+    | Solution.Package.Include link -> return (Include link)
     | Install {source; opam = None;} -> return (Install {source; opam = None;})
     | Install {source; opam = Some opam;} ->
       let%bind opam = OpamResolution.toLock ~sandbox:sandbox.spec opam in
@@ -102,7 +111,8 @@ let toPackage sandbox (node : node) =
   let open RunAsync.Syntax in
   let%bind source =
     match node.source with
-    | Link { path; manifest } -> return (Solution.Package.Link {path;manifest;})
+    | Link link -> return (Solution.Package.Link link)
+    | Include link -> return (Solution.Package.Include link)
     | Install {source; opam = None;} -> return (Solution.Package.Install {source; opam = None;})
     | Install {source; opam = Some opam;} ->
       let%bind opam = OpamResolution.ofLock ~sandbox:sandbox.Sandbox.spec opam in

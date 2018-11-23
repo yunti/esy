@@ -287,6 +287,8 @@ let toPackage ?source ~name ~version manifest =
         Package.Install {source = sourceFromOpam; opam;}
       | Some (Source.Link {path; manifest;}) ->
         Package.Link {path; manifest;}
+      | Some (Source.Include {path; manifest;}) ->
+        Package.Include {path; manifest;}
       | Some (Source.Dist source) ->
         Package.Install {source = source, []; opam;}
     in

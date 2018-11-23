@@ -694,9 +694,10 @@ let buildShell (copts : CommonOptions.t) packagePath () =
     let%bind () =
       Plan.buildDependencies
         ~cfg:copts.cfg
+        ~buildIncluded:true
         ~concurrency:EsyRuntime.concurrency
         plan
-        task.Plan.Task.pkgId
+        task.Plan.Task.pkg.id
     in
     let p =
       Plan.shell
@@ -721,14 +722,15 @@ let buildPackage (copts : CommonOptions.t) packagePath () =
       Plan.buildDependencies
         ~cfg:copts.cfg
         ~concurrency:EsyRuntime.concurrency
+        ~buildIncluded:true
         plan
-        task.Plan.Task.pkgId
+        task.Plan.Task.pkg.id
     in
     Plan.build
       ~cfg:copts.cfg
       ~force:true
       plan
-      task.Plan.Task.pkgId
+      task.Plan.Task.pkg.id
   in
   withTask info packagePath f
 
@@ -742,6 +744,7 @@ let build ?(buildOnly=true) (copts : CommonOptions.t) cmd () =
     Plan.buildDependencies
       ~cfg:copts.cfg
       ~concurrency:EsyRuntime.concurrency
+      ~buildIncluded:true
       plan
       root
   in
@@ -861,8 +864,9 @@ let makeExecCommand
       Plan.buildDependencies
         ~cfg:copts.cfg
         ~concurrency:EsyRuntime.concurrency
+        ~buildIncluded:false
         plan
-        task.Plan.Task.pkgId
+        task.Plan.Task.pkg.id
     else return ()
   in
 
@@ -1140,7 +1144,7 @@ let lsModules copts only () =
         return []
     in
 
-    let isNotRoot = PackageId.compare task.pkgId root.id <> 0 in
+    let isNotRoot = PackageId.compare task.pkg.id root.id <> 0 in
     let constraintsSet = List.length only <> 0 in
     let noMatchedLibs = List.length (List.intersect only libs) = 0 in
 

@@ -18,10 +18,8 @@ module Package : sig
   }
 
   and source =
-    | Link of {
-        path : DistPath.t;
-        manifest : ManifestSpec.t option;
-      }
+    | Link of Source.link
+    | Include of Source.link
     | Install of {
         source : Dist.t * Dist.t list;
         opam : OpamResolution.t option;

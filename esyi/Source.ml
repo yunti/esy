@@ -1,24 +1,27 @@
 open Sexplib0.Sexp_conv
 
+type link = {
+  path : DistPath.t;
+  manifest : ManifestSpec.t option;
+} [@@deriving yojson, ord, sexp_of]
+
 type t =
   | Dist of Dist.t
   | Link of link
+  | Include of link
   [@@deriving ord, sexp_of]
-
-and link = {
-  path : DistPath.t;
-  manifest : ManifestSpec.t option;
-}
 
 let manifest (src : t) =
   match src with
   | Link info -> info.manifest
+  | Include info -> info.manifest
   | Dist dist -> Dist.manifest dist
 
 let toDist (src : t) =
   match src with
   | Dist dist -> dist
   | Link {path;manifest;} -> Dist.LocalPath {path;manifest;}
+  | Include {path;manifest;} -> Dist.LocalPath {path;manifest;}
 
 let show' ~showPath = function
   | Dist Github {user; repo; commit; manifest = None;} ->
@@ -40,6 +43,10 @@ let show' ~showPath = function
     Printf.sprintf "link:%s" (showPath path)
   | Link {path; manifest = Some manifest;} ->
     Printf.sprintf "link:%s/%s" (showPath path) (ManifestSpec.show manifest)
+  | Include {path; manifest = None;} ->
+    Printf.sprintf "include:%s" (showPath path)
+  | Include {path; manifest = Some manifest;} ->
+    Printf.sprintf "include:%s/%s" (showPath path) (ManifestSpec.show manifest)
 
 let show = show' ~showPath:DistPath.show
 let showPretty = show' ~showPath:DistPath.showPretty
@@ -83,9 +90,11 @@ module Parse = struct
 
 
   let link =
-    let make path manifest =
-      Link { path; manifest; }
-    in
+    let make path manifest = Link { path; manifest; } in
+    pathLike make
+
+  let include_ =
+    let make path manifest = Include { path; manifest; } in
     pathLike make
 
   let dist =
@@ -93,7 +102,9 @@ module Parse = struct
     Dist dist
 
   let parser =
-    withPrefix "link:" (link ~requirePathSep:false) <|> dist
+    withPrefix "include:" (include_ ~requirePathSep:false)
+    <|> withPrefix "link:" (link ~requirePathSep:false)
+    <|> dist
 
   let parserRelaxed =
     let%map dist = Dist.parserRelaxed in
@@ -203,6 +214,14 @@ let%test_module "parsing" = (module struct
   let%expect_test "link:/some/path/lwt.opam" =
     parse "link:/some/path/lwt.opam";
     [%expect {| (Link ((path /some/path) (manifest ((One (Opam lwt.opam)))))) |}]
+
+  let%expect_test "include:/some/path" =
+    parse "include:/some/path";
+    [%expect {| (Include ((path /some/path) (manifest ()))) |}]
+
+  let%expect_test "include:/some/path/lwt.opam" =
+    parse "include:/some/path/lwt.opam";
+    [%expect {| (Include ((path /some/path) (manifest ((One (Opam lwt.opam)))))) |}]
 
   let%expect_test "path:some" =
     parse "path:some";

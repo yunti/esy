@@ -728,10 +728,8 @@ module Dependencies = struct
 end
 
 type source =
-  | Link of {
-      path : DistPath.t;
-      manifest : ManifestSpec.t option;
-    }
+  | Link of Source.link
+  | Include of Source.link
   | Install of {
       source : Dist.t * Dist.t list;
       opam : OpamResolution.t option;
@@ -761,6 +759,8 @@ let computeId ~cfg ~sandbox pkg =
   let open RunAsync.Syntax in
   match pkg.source with
   | Link _ ->
+    return (PackageId.make pkg.name pkg.version None)
+  | Include _ ->
     return (PackageId.make pkg.name pkg.version None)
   | Install { source = _; opam = None; } ->
     let%bind digest =

@@ -263,6 +263,8 @@ let packageOfSource ~name ~overrides (source : Source.t) resolver =
       | Source.Dist _, _ -> return (Source.Dist resolvedDist)
       | Source.Link _, Dist.LocalPath {path; manifest;} -> return (Source.Link {path;manifest;})
       | Source.Link _, dist -> errorf "unable to link to %a" Dist.pp dist
+      | Source.Include _, Dist.LocalPath {path; manifest;} -> return (Source.Include {path;manifest;})
+      | Source.Include _, dist -> errorf "unable to include a %a" Dist.pp dist
     in
 
     let%bind pkg =

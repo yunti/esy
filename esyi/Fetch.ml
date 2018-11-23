@@ -128,7 +128,8 @@ module PackagePaths = struct
 
   let installPath sandbox pkg =
     match pkg.Solution.Package.source with
-    | Solution.Package.Link { path; manifest = _; } ->
+    | Solution.Package.Link { path; manifest = _; }
+    | Solution.Package.Include { path; manifest = _; } ->
       DistPath.toPath sandbox.Sandbox.spec.path path
     | Install _ ->
       Path.(sandbox.Sandbox.cfg.sourceInstallPath / key pkg)
@@ -220,6 +221,7 @@ end = struct
 
     RunAsync.contextf (
       match pkg.Solution.Package.source with
+      | Solution.Package.Include {path; _}
       | Solution.Package.Link {path; _} ->
         let path = DistPath.toPath sandbox.Sandbox.spec.path path in
         return (pkg, Linked path)
@@ -340,7 +342,8 @@ end = struct
 
     let%bind filesOfOpam =
       match pkg.source with
-      | Solution.Package.Link _
+      | Include _
+      | Link _
       | Install { opam = None; _ } -> return []
       | Install { opam = Some opam; _ } -> OpamResolution.files opam
     in

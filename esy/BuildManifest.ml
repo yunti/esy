@@ -365,6 +365,7 @@ let ofPath ?manifest (path : Path.t) =
 let ofInstallationLocation ~cfg (pkg : Solution.Package.t) (loc : Installation.location) =
   let open RunAsync.Syntax in
   match pkg.source with
+  | Solution.Package.Include { path; manifest; }
   | Solution.Package.Link { path; manifest; } ->
     let dist = Dist.LocalPath {path; manifest;} in
     let%bind res =

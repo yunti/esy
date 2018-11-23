@@ -116,6 +116,8 @@ let packageOfJson
     match source with
     | Source.Link {path; manifest;} ->
       Package.Link {path; manifest;}
+    | Source.Include {path; manifest;} ->
+      Package.Include {path; manifest;}
     | Source.Dist dist ->
       Package.Install {source = dist, []; opam = None;}
   in

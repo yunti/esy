@@ -71,6 +71,8 @@ let ofSource (src : Source.t) =
   | Dist NoSource -> NoSource
   | Link {path; manifest;} ->
     LocalPath {path; manifest;}
+  | Include {path; manifest;} ->
+    LocalPath {path; manifest;}
 
 module Parse = struct
   include Parse

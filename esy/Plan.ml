@@ -9,7 +9,7 @@ module Version = EsyInstall.Version
 module Task = struct
   type t = {
     id : string;
-    pkgId : PackageId.t;
+    pkg : Package.t;
     name : string;
     version : Version.t;
     env : Scope.SandboxEnvironment.t;
@@ -72,7 +72,7 @@ module Task = struct
     let expr = Scope.SandboxValue.render cfg.Config.buildCfg expr in
     return expr
 
-  let pp fmt task = PackageId.pp fmt task.pkgId
+  let pp fmt task = PackageId.pp fmt task.pkg.id
 
 end
 
@@ -360,6 +360,7 @@ let make'
           else SourceType.Immutable
         in
         Some dist, sourceType
+      | EsyInstall.Solution.Package.Include _
       | EsyInstall.Solution.Package.Link _ ->
         None, SourceType.Transient
     in
@@ -489,7 +490,7 @@ let make'
     let task = {
       Task.
       id;
-      pkgId;
+      pkg;
       name;
       version;
       buildCommands;
@@ -647,9 +648,9 @@ end
 let isBuilt ~cfg task = Fs.exists (Task.installPath cfg task)
 
 let buildTask ?quiet ?buildOnly ?logPath ~cfg task =
-  Logs_lwt.debug (fun m -> m "build %a" PackageId.pp task.Task.pkgId);%lwt
+  Logs_lwt.debug (fun m -> m "build %a" PackageId.pp task.Task.pkg.id);%lwt
   let plan = Task.plan task in
-  let label = Fmt.strf "build %a" PackageId.pp task.Task.pkgId in
+  let label = Fmt.strf "build %a" PackageId.pp task.Task.pkg.id in
   Perf.measureLwt ~label (fun () -> EsyBuildPackageApi.build ?quiet ?buildOnly ?logPath ~cfg plan)
 
 let build ~force ?quiet ?buildOnly ?logPath ~cfg plan id =
@@ -682,7 +683,7 @@ let buildRoot ?quiet ?buildOnly ~cfg plan =
   | Some None
   | None -> RunAsync.return ()
 
-let buildDependencies' ?(concurrency=1) ~cfg plan id =
+let buildDependencies' ~concurrency ~buildIncluded ~cfg plan id =
   let open RunAsync.Syntax in
   Logs_lwt.debug (fun m -> m "buildDependencies ~concurrency:%i" concurrency);%lwt
 
@@ -724,12 +725,12 @@ let buildDependencies' ?(concurrency=1) ~cfg plan id =
   let run ~quiet task () =
     let start = Unix.gettimeofday () in
     if not quiet
-    then Logs_lwt.app (fun m -> m "building %a" PackageId.pp task.Task.pkgId)
+    then Logs_lwt.app (fun m -> m "building %a" Task.pp task)
     else Lwt.return ();%lwt
     let logPath = Task.logPath cfg task in
     let%bind () = buildTask ~cfg ~logPath task in
     if not quiet
-    then Logs_lwt.app (fun m -> m "building %a: done" PackageId.pp task.Task.pkgId)
+    then Logs_lwt.app (fun m -> m "building %a: done" Task.pp task)
     else Lwt.return ();%lwt
     let stop = Unix.gettimeofday () in
     return (stop -. start)
@@ -739,49 +740,52 @@ let buildDependencies' ?(concurrency=1) ~cfg plan id =
     let infoPath = Task.buildInfoPath cfg task in
     let sourcePath = Task.sourcePath cfg task in
     let%bind isBuilt = isBuilt ~cfg task in
-    match task.Task.sourceType with
-    | SourceType.Transient ->
-      let%bind changesInSources, mtime = checkFreshModifyTime infoPath sourcePath in
-      begin match isBuilt, Changes.(changesInDependencies + changesInSources) with
-      | true, Changes.No ->
-        Logs_lwt.debug (fun m -> m "building %a: skipping" PackageId.pp task.Task.pkgId);%lwt
-        return Changes.No
-      | true, Changes.Yes
-      | false, _ ->
-        let%bind timeSpent = LwtTaskQueue.submit queue (run ~quiet:false task) in
-        let%bind () = BuildInfo.toFile infoPath {
-          BuildInfo.
-          timeSpent;
-          sourceModTime = Some mtime;
-        } in
-        return Changes.Yes
-      end
-    | SourceType.ImmutableWithTransientDependencies ->
-      begin match isBuilt, changesInDependencies with
-      | true, Changes.No ->
-        Logs_lwt.debug (fun m -> m "building %a: skipping" PackageId.pp task.Task.pkgId);%lwt
-        return Changes.No
-      | true, Changes.Yes
-      | false, _ ->
-        let%bind timeSpent = LwtTaskQueue.submit queue (run ~quiet:false task) in
-        let%bind () = BuildInfo.toFile infoPath {
-          BuildInfo.
-          timeSpent;
-          sourceModTime = None;
-        } in
-        return Changes.Yes
-      end
-    | SourceType.Immutable ->
-      if isBuilt
-      then return Changes.No
-      else
-        let%bind timeSpent = LwtTaskQueue.submit queue (run ~quiet:false task) in
-        let%bind () = BuildInfo.toFile infoPath {
-          BuildInfo.
-          timeSpent;
-          sourceModTime = None;
-        } in
-        return Changes.No
+    match buildIncluded, task.pkg.source with
+    | false, Package.Include _ -> return Changes.No
+    | _ ->
+      match task.Task.sourceType with
+      | SourceType.Transient ->
+        let%bind changesInSources, mtime = checkFreshModifyTime infoPath sourcePath in
+        begin match isBuilt, Changes.(changesInDependencies + changesInSources) with
+        | true, Changes.No ->
+          Logs_lwt.debug (fun m -> m "building %a: skipping" Task.pp task);%lwt
+          return Changes.No
+        | true, Changes.Yes
+        | false, _ ->
+          let%bind timeSpent = LwtTaskQueue.submit queue (run ~quiet:false task) in
+          let%bind () = BuildInfo.toFile infoPath {
+            BuildInfo.
+            timeSpent;
+            sourceModTime = Some mtime;
+          } in
+          return Changes.Yes
+        end
+      | SourceType.ImmutableWithTransientDependencies ->
+        begin match isBuilt, changesInDependencies with
+        | true, Changes.No ->
+          Logs_lwt.debug (fun m -> m "building %a: skipping" Task.pp task);%lwt
+          return Changes.No
+        | true, Changes.Yes
+        | false, _ ->
+          let%bind timeSpent = LwtTaskQueue.submit queue (run ~quiet:false task) in
+          let%bind () = BuildInfo.toFile infoPath {
+            BuildInfo.
+            timeSpent;
+            sourceModTime = None;
+          } in
+          return Changes.Yes
+        end
+      | SourceType.Immutable ->
+        if isBuilt
+        then return Changes.No
+        else
+          let%bind timeSpent = LwtTaskQueue.submit queue (run ~quiet:false task) in
+          let%bind () = BuildInfo.toFile infoPath {
+            BuildInfo.
+            timeSpent;
+            sourceModTime = None;
+          } in
+          return Changes.No
   in
 
   let tasks = Hashtbl.create 100 in
@@ -823,17 +827,17 @@ let buildDependencies' ?(concurrency=1) ~cfg plan id =
     let%bind _: Changes.t = processDependencies pkg in
     return ()
 
-let buildDependencies ?concurrency ~cfg plan id =
+let buildDependencies ?(concurrency=1) ~buildIncluded ~cfg plan id =
   Perf.measureLwt
     ~label:"buildDependencies"
-    (fun () ->buildDependencies' ?concurrency ~cfg plan id)
+    (fun () ->buildDependencies' ~concurrency ~buildIncluded ~cfg plan id)
 
 let exposeUserEnv scope =
   scope
   |> Scope.exposeUserEnvWith Scope.SandboxEnvironment.Bindings.value "SHELL"
 
 let exposeDevDependenciesEnv plan task scope =
-  let pkg = Solution.getExn task.Task.pkgId plan.solution in
+  let pkg = Solution.getExn task.Task.pkg.id plan.solution in
   let f id scope =
     match PackageId.Map.find_opt id plan.tasks with
     | Some (Some task) -> Scope.add ~direct:true ~dep:task.Task.exportedScope scope

@@ -301,6 +301,7 @@ let solutionPkgOfPkg
   let source =
     match pkg.source with
     | Package.Link {path; manifest;} -> Solution.Package.Link {path;manifest;}
+    | Package.Include {path; manifest;} -> Solution.Package.Include {path;manifest;}
     | Package.Install { source; opam } -> Solution.Package.Install {source;opam;}
   in
 

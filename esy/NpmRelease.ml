@@ -162,6 +162,7 @@ let make
     let%bind () =
       Plan.buildDependencies
         ~concurrency
+        ~buildIncluded:true
         ~cfg
         plan
         root
