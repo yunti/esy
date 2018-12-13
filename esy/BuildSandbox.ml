@@ -141,6 +141,15 @@ module Task = struct
         EsyInstall.Solution.DepSpec.pp
         (Scope.depspec t.scope)
     in
+    let files =
+      let f config =
+        let name = Scope.Findlib.name ~prefix:buildPath config in
+        let content = Scope.Findlib.content config in
+        (name, content)
+      in
+      let configs = Scope.toFindlibConfig t.scope in
+      List.map ~f configs
+    in
     {
       EsyBuildPackage.Plan.
       id = BuildId.show (Scope.id t.scope);
@@ -158,6 +167,7 @@ module Task = struct
       jbuilderHackEnabled;
       env;
       depspec;
+      files;
     }
 
   let to_yojson t = EsyBuildPackage.Plan.to_yojson (plan t)

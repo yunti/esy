@@ -4,6 +4,13 @@ module SandboxPath : module type of EsyBuildPackage.Config.Path
 module SandboxValue : module type of EsyBuildPackage.Config.Value
 module SandboxEnvironment : module type of EsyBuildPackage.Config.Environment
 
+module Findlib : sig
+  type t
+
+  val name : prefix:SandboxPath.t -> t -> string
+  val content : t -> string
+end
+
 type t
 
 val make :
@@ -60,3 +67,5 @@ val render :
 val toOpamEnv : buildIsInProgress:bool -> t -> OpamFilter.env
 
 val exposeUserEnvWith : (string -> SandboxValue.t -> SandboxValue.t Environment.Binding.t) -> string -> t -> t
+
+val toFindlibConfig: t -> Findlib.t list
