@@ -1,6 +1,6 @@
 type t =
   | OfJson of {json : Json.t;}
-  | OfDist of {dist : Dist.t; json : Json.t;}
+  | OfSource of {source : Source.t; json : Json.t;}
   | OfOpamOverride of {
       path : Path.t;
       json : Json.t;
@@ -29,14 +29,14 @@ type install = {
 
 let pp fmt = function
   | OfJson _ -> Fmt.unit "<inline override>" fmt ()
-  | OfDist {dist; json = _;} -> Fmt.pf fmt "override:%a" Dist.pp dist
+  | OfSource {source; json = _;} -> Fmt.pf fmt "override:%a" Source.pp source
   | OfOpamOverride info -> Fmt.pf fmt "opam-override:%a" Path.pp info.path
 
 let json override =
   let open RunAsync.Syntax in
   match override with
   | OfJson info -> return info.json
-  | OfDist info -> return info.json
+  | OfSource info -> return info.json
   | OfOpamOverride info -> return info.json
 
 let build override =
@@ -52,15 +52,18 @@ let install override =
   return (Some override)
 
 let ofJson json = OfJson {json;}
-let ofDist json dist = OfDist {json; dist;}
+let ofSource json source = OfSource {json; source;}
 
 let files cfg sandbox override =
   let open RunAsync.Syntax in
 
   match override with
   | OfJson _ -> return []
-  | OfDist info ->
-    let%bind path = DistStorage.fetchIntoCache ~cfg ~sandbox info.dist in
+  | OfSource { source = Source.Dist dist; json = _; } ->
+    let%bind path = DistStorage.fetchIntoCache ~cfg ~sandbox dist in
+    File.ofDir Path.(path / "files")
+  | OfSource { source = Source.Link local; json = _; } ->
+    let path = DistPath.toPath sandbox.path local.path in
     File.ofDir Path.(path / "files")
   | OfOpamOverride info ->
     File.ofDir Path.(info.path / "files")

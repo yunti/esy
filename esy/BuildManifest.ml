@@ -372,12 +372,12 @@ let ofInstallationLocation ~cfg (pkg : Package.t) (loc : Installation.location) 
   let open RunAsync.Syntax in
   match pkg.source with
   | Link { path; manifest; } ->
-    let dist = Dist.LocalPath {path; manifest;} in
+    let source = Source.Dist (Dist.LocalPath {path; manifest;}) in
     let%bind res =
       DistResolver.resolve
         ~cfg:cfg.Config.installCfg
         ~sandbox:cfg.spec
-        dist
+        source
     in
     let overrides = Overrides.merge pkg.overrides res.DistResolver.overrides in
     let%bind manifest =

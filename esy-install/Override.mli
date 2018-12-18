@@ -1,6 +1,6 @@
 type t =
   | OfJson of {json : Json.t;}
-  | OfDist of {dist : Dist.t; json : Json.t;}
+  | OfSource of {source : Source.t; json : Json.t;}
   | OfOpamOverride of {
       path : Path.t;
       json : Json.t;
@@ -28,6 +28,6 @@ val build : t -> build option RunAsync.t
 val install : t -> install option RunAsync.t
 
 val ofJson : Json.t -> t
-val ofDist : Json.t -> Dist.t -> t
+val ofSource : Json.t -> Source.t -> t
 
 val files : Config.t -> SandboxSpec.t -> t -> File.t list RunAsync.t

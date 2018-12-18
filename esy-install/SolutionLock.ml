@@ -1,23 +1,26 @@
 type override =
   | OfJson of {json : Json.t}
   | OfPath of Dist.local
+  | OfLink of Dist.local
   | OfOpamOverride of {path : DistPath.t;}
 
 let override_to_yojson override =
   match override with
   | OfJson {json;} -> json
-  | OfPath local -> Dist.local_to_yojson local
-  | OfOpamOverride { path; } -> `Assoc [
-      "opamoverride", DistPath.to_yojson path;
-    ]
+  | OfPath local -> `Assoc ["path", Dist.local_to_yojson local;]
+  | OfLink local -> `Assoc ["link", Dist.local_to_yojson local;]
+  | OfOpamOverride { path; } -> `Assoc ["opam", DistPath.to_yojson path;]
 
 let override_of_yojson json =
   let open Result.Syntax in
   match json with
-  | `String _ ->
-    let%map local = Dist.local_of_yojson json in
-    OfPath local
-  | `Assoc ["opamoverride", path;] ->
+  | `Assoc ["path", json;] ->
+    let%bind local = Dist.local_of_yojson json in
+    return (OfPath local)
+  | `Assoc ["link", json;] ->
+    let%bind local = Dist.local_of_yojson json in
+    return (OfLink local)
+  | `Assoc ["opam", path;] ->
     let%bind path = DistPath.of_yojson path in
     return (OfOpamOverride {path;})
   | `Assoc _ ->
@@ -90,9 +93,9 @@ let writeOverride sandbox pkg override =
     let%bind () = Fs.copyPath ~src:info.path ~dst:lockPath in
     let path = DistPath.ofPath (Path.tryRelativize ~root:sandbox.spec.path lockPath) in
     return (OfOpamOverride {path;})
-  | Override.OfDist {dist = Dist.LocalPath local; json = _;} ->
+  | Override.OfSource {source = Source.Link local; json = _;} ->
     return (OfPath local)
-  | Override.OfDist {dist; json = _;} ->
+  | Override.OfSource {source = Source.Dist dist; json = _;} ->
     let%bind distPath = DistStorage.fetchIntoCache ~cfg:sandbox.cfg ~sandbox:sandbox.spec dist in
     let digest = Digestv.ofString (Dist.show dist) in
     let lockPath = Path.(
@@ -107,13 +110,7 @@ let writeOverride sandbox pkg override =
 
 let readOverride sandbox override =
   let open RunAsync.Syntax in
-  match override with
-  | OfJson {json;} -> return (Override.OfJson {json;})
-  | OfOpamOverride {path;} ->
-    let path = DistPath.toPath sandbox.Sandbox.spec.path path in
-    let%bind json = Fs.readJsonFile Path.(path / "package.json") in
-    return (Override.OfOpamOverride {json; path;})
-  | OfPath local ->
+  let readJsonOfLocal (local : Dist.local) =
     let filename =
       match local.manifest with
       | None -> "package.json"
@@ -121,10 +118,23 @@ let readOverride sandbox override =
       | Some One (Opam, _filename) -> failwith "cannot load override from opam file"
       | Some ManyOpam -> failwith "cannot load override from opam files"
     in
-    let dist = Dist.LocalPath local in
     let path = DistPath.toPath sandbox.Sandbox.spec.path DistPath.(local.path / filename) in
     let%bind json = PackageOverride.ofPath path in
-    return (Override.OfDist {dist; json;})
+    return json
+  in
+  match override with
+  | OfJson {json;} -> return (Override.OfJson {json;})
+  | OfOpamOverride {path;} ->
+    let path = DistPath.toPath sandbox.Sandbox.spec.path path in
+    let%bind json = Fs.readJsonFile Path.(path / "package.json") in
+    return (Override.OfOpamOverride {json; path;})
+  | OfPath local ->
+    let dist = Dist.LocalPath local in
+    let%bind json = readJsonOfLocal local in
+    return (Override.OfSource {source = Source.Dist dist; json;})
+  | OfLink local ->
+    let%bind json = readJsonOfLocal local in
+    return (Override.OfSource {source = Source.Link local; json;})
 
 let writeOverrides sandbox pkg overrides =
   RunAsync.List.mapAndJoin ~f:(writeOverride sandbox pkg) overrides

@@ -6,7 +6,7 @@ let computeOverrideDigest sandbox override =
   let open RunAsync.Syntax in
   match override with
   | EsyInstall.Override.OfJson {json;} -> return (Digestv.ofJson json)
-  | OfDist {dist; json = _;} -> return (Digestv.ofString (EsyInstall.Dist.show dist))
+  | OfSource {source; json = _;} -> return (Digestv.ofString (EsyInstall.Source.show source))
   | OfOpamOverride info ->
     let%bind files =
       EsyInstall.Override.files

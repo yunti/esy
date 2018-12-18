@@ -1,15 +1,15 @@
 module PackageOverride = struct
   type t = {
-    dist : Dist.t;
+    source : Source.t;
     override : Json.t;
   }
 
   let of_yojson json =
     let open Result.Syntax in
-    let%bind dist =
+    let%bind source =
       Json.Decode.fieldWith
         ~name:"source"
-        Dist.relaxed_of_yojson
+        Source.relaxed_of_yojson
         json
     in
     let%bind override =
@@ -18,13 +18,13 @@ module PackageOverride = struct
       Json.of_yojson
       json
     in
-    return {dist; override;}
+    return {source; override;}
 
 end
 
 type resolution = {
   overrides : Overrides.t;
-  dist : Dist.t;
+  source : Source.t;
   manifest : manifest option;
   paths : Path.Set.t;
 }
@@ -41,14 +41,19 @@ type state =
   | Manifest of manifest
   | Override of PackageOverride.t
 
-let rebase ~(base : Dist.t) (source : Dist.t) =
+let rebase ~(base : Source.t) (source : Source.t) =
   let open Run.Syntax in
   match source, base with
-  | Dist.LocalPath info, Dist.LocalPath {path = basePath; _} ->
+  | Dist Dist.LocalPath info, Link {path = basePath; _} ->
     let path = DistPath.rebase ~base:basePath info.path in
-    return (Dist.LocalPath {info with path;})
-  | Dist.LocalPath _, _ ->
-    Exn.failf "unable to rebase %a onto %a" Dist.pp source Dist.pp base
+    return (Source.Dist (Dist.LocalPath {info with path;}))
+  | Dist Dist.LocalPath info, Dist Dist.LocalPath {path = basePath; _} ->
+    let path = DistPath.rebase ~base:basePath info.path in
+    return (Source.Dist (Dist.LocalPath {info with path;}))
+  | Dist Dist.LocalPath _, _
+  | Link _, Dist _
+  | Link _, Link _ ->
+    errorf "unable to rebase %a onto %a" Source.pp source Source.pp base
   | source, _ -> return source
 
 let suggestPackageName ~fallback (kind, filename) =
@@ -182,13 +187,13 @@ let resolve
   ?(overrides=Overrides.empty)
   ~cfg
   ~sandbox
-  (dist : Dist.t) =
+  (source : Source.t) =
   let open RunAsync.Syntax in
 
-  let resolve' (dist : Dist.t) =
-    Logs_lwt.debug (fun m -> m "fetching metadata %a" Dist.pp dist);%lwt
-    match dist with
-    | LocalPath {path; manifest} ->
+  let resolve' (source : Source.t) =
+    Logs_lwt.debug (fun m -> m "fetching metadata %a" Source.pp source);%lwt
+    match source with
+    | Link {path; manifest} ->
       let realpath = DistPath.toPath sandbox.SandboxSpec.path path in
       begin match%bind Fs.exists realpath with
       | false -> errorf "%a doesn't exist" DistPath.pp path
@@ -196,7 +201,15 @@ let resolve
         let%bind tried, pkg = ofPath ?manifest realpath in
         return (pkg, tried)
       end
-    | Git {remote; commit; manifest;} ->
+    | Dist LocalPath {path; manifest} ->
+      let realpath = DistPath.toPath sandbox.SandboxSpec.path path in
+      begin match%bind Fs.exists realpath with
+      | false -> errorf "%a doesn't exist" DistPath.pp path
+      | true ->
+        let%bind tried, pkg = ofPath ?manifest realpath in
+        return (pkg, tried)
+      end
+    | Dist Git {remote; commit; manifest;} ->
       let manifest = Option.map ~f:(fun m -> ManifestSpec.One m) manifest in
       Fs.withTempDir begin fun repo ->
         let%bind () = Git.clone ~dst:repo ~remote () in
@@ -204,10 +217,10 @@ let resolve
         let%bind _, pkg = ofPath ?manifest repo in
         return (pkg, Path.Set.empty)
       end
-    | Github {user; repo; commit; manifest;} ->
+    | Dist Github {user; repo; commit; manifest;} ->
       let%bind pkg = ofGithub ?manifest user repo commit in
       return (pkg, Path.Set.empty)
-    | Archive _ ->
+    | Dist (Archive _ as dist) ->
       let%bind path =
         DistStorage.fetchIntoCache
           ~cfg
@@ -217,33 +230,33 @@ let resolve
       let%bind _, pkg = ofPath path in
       return (pkg, Path.Set.empty)
 
-    | NoSource ->
+    | Dist NoSource ->
       return (EmptyManifest, Path.Set.empty)
   in
 
-  let rec loop' ~overrides ~paths dist =
-    match%bind resolve' dist with
+  let rec loop' ~overrides ~paths source =
+    match%bind resolve' source with
     | EmptyManifest, newPaths ->
       return {
         manifest = None;
         overrides;
-        dist;
+        source;
         paths = Path.Set.union paths newPaths;
       }
     | Manifest manifest, newPaths ->
       return {
         manifest = Some manifest;
         overrides;
-        dist;
+        source;
         paths = Path.Set.union paths newPaths;
       }
-    | Override {dist = nextDist; override = json;}, newPaths ->
-      let override = Override.ofDist json dist in
-      let%bind nextDist = RunAsync.ofRun (rebase ~base:dist nextDist) in
-      Logs_lwt.debug (fun m -> m "override: %a -> %a@." Dist.pp dist Dist.pp nextDist);%lwt
+    | Override {source = nextSource; override = json;}, newPaths ->
+      let override = Override.ofSource json source in
+      let%bind nextDist = RunAsync.ofRun (rebase ~base:source nextSource) in
+      Logs_lwt.debug (fun m -> m "override: %a -> %a@." Source.pp source Source.pp nextSource);%lwt
       let overrides = Overrides.add override overrides in
       let paths = Path.Set.union paths newPaths in
       loop' ~overrides ~paths nextDist
   in
 
-  loop' ~overrides ~paths:Path.Set.empty dist
+  loop' ~overrides ~paths:Path.Set.empty source

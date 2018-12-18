@@ -91,16 +91,22 @@ let emptyLink ~name ~path ~manifest () =
   }
 
 let emptyInstall ~name ~source () =
+  let version = EsyInstall.Version.Source source in
+  let source =
+    match source with
+    | Link local -> EsyInstall.PackageSource.Link local
+    | Dist dist -> EsyInstall.PackageSource.Install {
+        source = dist, [];
+        opam = None;
+      }
+  in
   {
     Package.
     name;
-    version = EsyInstall.Version.Source (Dist source);
+    version;
     originalVersion = None;
     originalName = None;
-    source = EsyInstall.PackageSource.Install {
-      source = source, [];
-      opam = None;
-    };
+    source;
     overrides = EsyInstall.Overrides.empty;
     dependencies = Package.Dependencies.NpmFormula [];
     devDependencies = Package.Dependencies.NpmFormula [];
@@ -248,20 +254,24 @@ let packageOfSource ~name ~overrides (source : EsyInstall.Source.t) resolver =
   in
 
   let pkg =
-    let%bind { EsyInstall.DistResolver. overrides; dist = resolvedDist; manifest; _; } =
+    let%bind { EsyInstall.DistResolver. overrides; source = resolvedSource; manifest; _; } =
       EsyInstall.DistResolver.resolve
         ~cfg:resolver.cfg.installCfg
         ~sandbox:resolver.sandbox
         ~overrides
-        (EsyInstall.Source.toDist source)
+        source
     in
 
     let%bind resolvedSource =
-      match source, resolvedDist with
-      | EsyInstall.Source.Dist _, _ -> return (EsyInstall.Source.Dist resolvedDist)
-      | EsyInstall.Source.Link _, EsyInstall.Dist.LocalPath {path; manifest;} ->
-        return (EsyInstall.Source.Link {path;manifest;})
-      | EsyInstall.Source.Link _, dist -> errorf "unable to link to %a" EsyInstall.Dist.pp dist
+      match source, resolvedSource with
+      | Dist _, _ ->
+        return resolvedSource
+      | Link _, Dist LocalPath local ->
+        return (EsyInstall.Source.Link local)
+      | Link _, Link local ->
+        return (EsyInstall.Source.Link local)
+      | Link _, source ->
+        errorf "unable to link to %a" EsyInstall.Source.pp source
     in
 
     let%bind pkg =
@@ -276,7 +286,7 @@ let packageOfSource ~name ~overrides (source : EsyInstall.Source.t) resolver =
             let pkg = emptyLink ~name ~path ~manifest () in
             return (Ok pkg)
           | _ ->
-            let pkg = emptyInstall ~name ~source:resolvedDist () in
+            let pkg = emptyInstall ~name ~source:resolvedSource () in
             return (Ok pkg)
         else errorf "no manifest found at %a" EsyInstall.Source.pp source
     in
