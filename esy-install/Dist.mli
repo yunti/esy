@@ -24,6 +24,8 @@ and local = {
 
 val local_of_yojson : local Json.decoder
 val local_to_yojson : local Json.encoder
+val sexp_of_local : local -> Sexplib0.Sexp.t
+val compare_local : local -> local -> int
 
 include S.PRINTABLE with type t := t
 include S.JSONABLE with type t := t

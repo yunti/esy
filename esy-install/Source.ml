@@ -1,13 +1,8 @@
 open Sexplib0.Sexp_conv
 
-type link = {
-  path : DistPath.t;
-  manifest : ManifestSpec.t option;
-} [@@deriving ord, sexp_of, yojson]
-
 type t =
   | Dist of Dist.t
-  | Link of link
+  | Link of Dist.local
   [@@deriving ord, sexp_of]
 
 let manifest (src : t) =
