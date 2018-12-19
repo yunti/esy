@@ -100,7 +100,7 @@ let writeOverride sandbox pkg override =
       return (OfOpamOverride {path;}::rest)
     | Override.Override { json = _; prev; kind = Source (Source.Link local); } ->
       let%bind rest = write prev in
-      return (OfPath local::rest)
+      return (OfLink local::rest)
     | Override.Override { json = _; prev; kind = Source (Source.Dist dist); } ->
       let%bind rest = write prev in
       let%bind distPath = DistStorage.fetchIntoCache ~cfg:sandbox.cfg ~sandbox:sandbox.spec dist in

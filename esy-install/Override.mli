@@ -10,6 +10,7 @@ and kind =
 val pp : t Fmt.t
 
 val isEmpty : t -> bool
+val isLink : t -> bool
 
 val ofJson : Json.t -> t -> t
 val ofSource : Json.t -> Source.t -> t -> t

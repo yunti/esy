@@ -3,6 +3,7 @@ module PackageId = EsyInstall.PackageId
 module Package = EsyInstall.Package
 module Installation = EsyInstall.Installation
 module Source = EsyInstall.Source
+module Override = EsyInstall.Override
 module Version = EsyInstall.Version
 
 type t = {
@@ -315,6 +316,7 @@ let makeScope
 
     let sourceType =
       match pkg.source with
+      | Install _ when Override.isLink pkg.override -> SourceType.Transient
       | Install _ ->
         let hasTransientDeps =
           let f (_direct, scope) = Scope.sourceType scope = SourceType.Transient in

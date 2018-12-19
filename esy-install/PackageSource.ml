@@ -30,6 +30,10 @@ type t =
       opam : opam option;
     }
 
+let pp fmt = function
+  | Link local -> Fmt.pf fmt "link:%a" Dist.pp_local local
+  | Install {source = dist, _; opam = _;} -> Dist.pp fmt dist
+
 let to_yojson source =
   let open Json.Encode in
   match source with

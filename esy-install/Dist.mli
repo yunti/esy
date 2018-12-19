@@ -22,6 +22,8 @@ and local = {
   manifest : ManifestSpec.t option;
 }
 
+val pp_local : local Fmt.t
+
 val local_of_yojson : local Json.decoder
 val local_to_yojson : local Json.encoder
 val sexp_of_local : local -> Sexplib0.Sexp.t

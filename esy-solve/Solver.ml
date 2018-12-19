@@ -7,9 +7,8 @@ let computeOverrideDigest sandbox override =
   let rec collect digest (override : EsyInstall.Override.t) =
     match override with
     | Empty -> return digest
-    | Override {prev; kind = Json; json;} ->
-      let part = Digestv.ofJson json in
-      collect Digestv.(part + digest) prev
+    | Override {prev; kind = Json; json = _;} ->
+      collect digest prev
     | Override {prev; kind = Opam _; json;} ->
       let%bind this =
         let%bind files =
@@ -24,9 +23,11 @@ let computeOverrideDigest sandbox override =
         return (List.fold_left ~init:Digestv.empty ~f:Digestv.combine digests)
       in
       collect Digestv.(this + digest) prev
-    | Override {prev; kind = Source source; json = _;} ->
-      let this = Digestv.ofString (EsyInstall.Source.show source) in
+    | Override { prev; json = _; kind = Source (EsyInstall.Source.Dist dist) } ->
+      let this = Digestv.ofString (EsyInstall.Dist.show dist) in
       collect Digestv.(this + digest) prev
+    | Override { prev; json = _; kind = Source (EsyInstall.Source.Link _) } ->
+      collect digest prev
   in
   collect Digestv.empty override
 

@@ -55,6 +55,16 @@ let show' ~showPath = function
 let show = show' ~showPath:DistPath.show
 let showPretty = show' ~showPath:DistPath.showPretty
 
+let show_local local =
+  match local with
+  | {path; manifest = None;} ->
+    Printf.sprintf "%s" (DistPath.show path)
+  | {path; manifest = Some manifest;} ->
+    Printf.sprintf "%s/%s" (DistPath.show path) (ManifestSpec.show manifest)
+
+let pp_local fmt local =
+  Fmt.pf fmt "%s" (show_local local)
+
 let pp fmt src =
   Fmt.pf fmt "%s" (show src)
 

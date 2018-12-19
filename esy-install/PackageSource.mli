@@ -11,6 +11,8 @@ and opam = {
   path : Path.t;
 }
 
+val pp : t Fmt.t
+
 val opam_to_yojson : opam Json.encoder
 val opam_of_yojson : opam Json.decoder
 

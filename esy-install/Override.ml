@@ -21,6 +21,17 @@ let isEmpty = function
   | Empty -> true
   | Override _ -> false
 
+let isLink override =
+  let rec aux =
+    function
+    | Empty -> false
+    | Override { kind = Json; prev; _ }
+    | Override { kind = Opam _; prev; _ }
+    | Override { kind = Source Source.Dist _; prev; _ } -> aux prev
+    | Override { kind = Source Source.Link _; _ } -> true
+  in
+  aux override
+
 let fold' ~f ~init override =
   let open Run.Syntax in
   let rec aux value override =
@@ -33,9 +44,22 @@ let fold' ~f ~init override =
   in
   aux init override
 
-let files cfg sandbox override =
+let files' collectOf override =
   let open RunAsync.Syntax in
 
+  let rec collect files override =
+    match override with
+    | Empty -> return files
+    | Override {json = _; prev; kind ;} ->
+      let%bind files = collect files prev in
+      let%bind thisFiles = collectOf kind in
+      return (files @ thisFiles)
+  in
+
+  collect [] override
+
+let files cfg sandbox override =
+  let open RunAsync.Syntax in
   let collectOfKind kind =
     match kind with
     | Json -> return []
@@ -48,17 +72,7 @@ let files cfg sandbox override =
     | Opam path ->
       File.ofDir Path.(path / "files")
   in
-
-  let rec collect files override =
-    match override with
-    | Empty -> return files
-    | Override {json = _; prev; kind ;} ->
-      let%bind files = collect files prev in
-      let%bind thisFiles = collectOfKind kind in
-      return (files @ thisFiles)
-  in
-
-  collect [] override
+  files' collectOfKind override
 
 module Build = struct
 

@@ -1,5 +1,6 @@
 module Resolutions = EsyInstall.PackageConfig.Resolutions
 module Resolution = EsyInstall.PackageConfig.Resolution
+module Source = EsyInstall.Source
 
 module PackageCache = Memoize.Make(struct
   type key = (string * Resolution.resolution)
@@ -262,18 +263,6 @@ let packageOfSource ~name ~override (source : EsyInstall.Source.t) resolver =
         source
     in
 
-    let%bind resolvedSource =
-      match source, resolvedSource with
-      | Dist _, _ ->
-        return resolvedSource
-      | Link _, Dist LocalPath local ->
-        return (EsyInstall.Source.Link local)
-      | Link _, Link local ->
-        return (EsyInstall.Source.Link local)
-      | Link _, source ->
-        errorf "unable to link to %a" EsyInstall.Source.pp source
-    in
-
     let%bind pkg =
       match manifest with
       | Some manifest ->
@@ -281,7 +270,7 @@ let packageOfSource ~name ~override (source : EsyInstall.Source.t) resolver =
       | None ->
         if not (EsyInstall.Override.isEmpty override)
         then
-          match source with
+          match resolvedSource with
           | EsyInstall.Source.Link {path; manifest;} ->
             let pkg = emptyLink ~name ~path ~manifest () in
             return (Ok pkg)

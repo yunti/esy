@@ -117,6 +117,15 @@ module PackagePaths = struct
     in
     Path.safeSeg (pkg.Package.name ^ "__" ^ suffix)
 
+  let installPath sandbox pkg =
+    match pkg.Package.source with
+    | Link { path; manifest = _; } ->
+      DistPath.toPath sandbox.Sandbox.spec.path path
+    | Install _ when Override.isLink pkg.override ->
+      Path.(SandboxSpec.sourcePath sandbox.Sandbox.spec / pkg.name)
+    | Install _ ->
+      Path.(sandbox.Sandbox.cfg.sourceInstallPath / key pkg)
+
   let stagePath sandbox pkg =
     (* We are getting EACCESS error on Windows if we try to rename directory
      * from stage to install after we read a file from there. It seems we are
@@ -128,8 +137,16 @@ module PackagePaths = struct
      * install again).
      *)
     match System.Platform.host with
-    | Windows -> Path.(sandbox.Sandbox.cfg.sourceInstallPath / key pkg)
-    | _ -> Path.(sandbox.Sandbox.cfg.sourceStagePath / key pkg)
+    | Windows -> installPath sandbox pkg
+    | _ ->
+      begin match pkg.Package.source with
+      | Link _ ->
+        assert false
+      | Install _ when Override.isLink pkg.override ->
+        Path.(SandboxSpec.sourcePath sandbox.Sandbox.spec / pkg.name)
+      | Install _ ->
+        Path.(sandbox.Sandbox.cfg.sourceStagePath / key pkg)
+      end
 
   let cachedTarballPath sandbox pkg =
     match sandbox.Sandbox.cfg.sourceArchivePath, pkg.Package.source with
@@ -142,19 +159,11 @@ module PackagePaths = struct
       let id = key pkg in
       Some Path.(sourceArchivePath // v id |> addExt "tgz")
 
-  let installPath sandbox pkg =
-    match pkg.Package.source with
-    | Link { path; manifest = _; } ->
-      DistPath.toPath sandbox.Sandbox.spec.path path
-    | Install _ ->
-      Path.(sandbox.Sandbox.cfg.sourceInstallPath / key pkg)
-
   let commit ~needRewrite stagePath installPath =
     let open RunAsync.Syntax in
-    (* See distStagePath for details *)
-    match System.Platform.host with
-    | Windows -> RunAsync.return ()
-    | _ ->
+    if Path.compare stagePath installPath = 0
+    then RunAsync.return ()
+    else
       let%bind () =
         if needRewrite
         then
