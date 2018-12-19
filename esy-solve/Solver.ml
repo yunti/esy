@@ -4,25 +4,31 @@ module Resolution = EsyInstall.PackageConfig.Resolution
 
 let computeOverrideDigest sandbox override =
   let open RunAsync.Syntax in
-  match override with
-  | EsyInstall.Override.OfJson {json;} -> return (Digestv.ofJson json)
-  | OfSource {source; json = _;} -> return (Digestv.ofString (EsyInstall.Source.show source))
-  | OfOpamOverride info ->
-    let%bind files =
-      EsyInstall.Override.files
-        sandbox.Sandbox.cfg.installCfg
-        sandbox.spec override
-    in
-    let%bind digests = RunAsync.List.mapAndJoin ~f:EsyInstall.File.digest files in
-    let digest = Digestv.ofJson info.json in
-    let digests = digest::digests in
-    let digests = List.sort ~cmp:Digestv.compare digests in
-    return (List.fold_left ~init:Digestv.empty ~f:Digestv.combine digests)
-
-let computeOverridesDigest sandbox overrides =
-  let open RunAsync.Syntax in
-  let%bind digests = RunAsync.List.mapAndJoin ~f:(computeOverrideDigest sandbox) overrides in
-  return (List.fold_left ~init:Digestv.empty ~f:Digestv.combine digests)
+  let rec collect digest (override : EsyInstall.Override.t) =
+    match override with
+    | Empty -> return digest
+    | Override {prev; kind = Json; json;} ->
+      let part = Digestv.ofJson json in
+      collect Digestv.(part + digest) prev
+    | Override {prev; kind = Opam _; json;} ->
+      let%bind this =
+        let%bind files =
+          EsyInstall.Override.files
+            sandbox.Sandbox.cfg.installCfg
+            sandbox.spec override
+        in
+        let%bind digests = RunAsync.List.mapAndJoin ~f:EsyInstall.File.digest files in
+        let digest = Digestv.ofJson json in
+        let digests = digest::digests in
+        let digests = List.sort ~cmp:Digestv.compare digests in
+        return (List.fold_left ~init:Digestv.empty ~f:Digestv.combine digests)
+      in
+      collect Digestv.(this + digest) prev
+    | Override {prev; kind = Source source; json = _;} ->
+      let this = Digestv.ofString (EsyInstall.Source.show source) in
+      collect Digestv.(this + digest) prev
+  in
+  collect Digestv.empty override
 
 let lock sandbox (pkg : Package.t) =
   let open RunAsync.Syntax in
@@ -30,14 +36,14 @@ let lock sandbox (pkg : Package.t) =
   | Install { source = _; opam = Some opam; } ->
     let%bind id =
       let%bind opamDigest = OpamResolution.digest opam in
-      let%bind overridesDigest = computeOverridesDigest sandbox pkg.overrides in
+      let%bind overridesDigest = computeOverrideDigest sandbox pkg.override in
       let digest = Digestv.(opamDigest + overridesDigest) in
       return (EsyInstall.PackageId.make pkg.name pkg.version (Some digest))
     in
     return (id, pkg)
   | Install { source = _; opam = None; } ->
     let%bind id =
-      let%bind digest = computeOverridesDigest sandbox pkg.overrides in
+      let%bind digest = computeOverrideDigest sandbox pkg.override in
       return (EsyInstall.PackageId.make pkg.name pkg.version (Some digest))
     in
     return (id, pkg)
@@ -289,7 +295,7 @@ let lockPackage
     originalVersion = _;
     originalName = _;
     source;
-    overrides;
+    override;
     dependencies;
     devDependencies;
     peerDependencies;
@@ -367,7 +373,7 @@ let lockPackage
     name = name;
     version = version;
     source = source;
-    overrides = overrides;
+    override = override;
     dependencies;
     devDependencies;
   }
@@ -503,7 +509,7 @@ let solveDependencies ~root ~installed ~strategy dependencies solver =
       path = EsyInstall.DistPath.v ".";
       manifest = None;
     };
-    overrides = EsyInstall.Overrides.empty;
+    override = EsyInstall.Override.Empty;
     dependencies;
     devDependencies = Dependencies.NpmFormula [];
     peerDependencies = EsyInstall.PackageConfig.NpmFormula.empty;

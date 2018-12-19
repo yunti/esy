@@ -41,7 +41,6 @@ type t = {
   version: OpamPackage.Version.t;
   opam: OpamFile.OPAM.t;
   url: OpamFile.URL.t option;
-  override : EsyInstall.Override.t option;
   opamRepositoryPath : Path.t option;
 }
 
@@ -54,7 +53,6 @@ let ofPath ~name ~version (path : Path.t) =
     opamRepositoryPath = Some (Path.parent path);
     opam;
     url = None;
-    override = None;
   }
 
 let ofString ~name ~version (data : string) =
@@ -66,7 +64,6 @@ let ofString ~name ~version (data : string) =
     opam;
     url = None;
     opamRepositoryPath = None;
-    override = None;
   }
 
 let ocamlOpamVersionToOcamlNpmVersion v =
@@ -273,12 +270,6 @@ let toPackage ?source ~name ~version manifest =
         Install {source = source, []; opam;}
     in
 
-    let overrides =
-      match manifest.override with
-      | None -> EsyInstall.Overrides.empty
-      | Some override -> EsyInstall.Overrides.(add override empty)
-    in
-
     return (Ok {
       Package.
       name;
@@ -287,7 +278,7 @@ let toPackage ?source ~name ~version manifest =
       originalName = None;
       kind = Package.Esy;
       source;
-      overrides;
+      override = EsyInstall.Override.Empty;
       dependencies;
       devDependencies;
       optDependencies;

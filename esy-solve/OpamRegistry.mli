@@ -14,9 +14,9 @@ val versions :
   -> OpamResolution.t list RunAsync.t
 (** Return a list of resolutions for a given opam package name. *)
 
-val version :
-  name : OpamPackage.Name.t
-  -> version : OpamPackage.Version.t
+val package :
+  OpamPackage.Name.t
+  -> OpamPackage.Version.t
   -> t
-  -> OpamManifest.t option RunAsync.t
-(** Return an opam manifest for a given opam package name, version. *)
+  -> (Package.t, string) result RunAsync.t
+(** Return Package.t for given opam package name and version *)

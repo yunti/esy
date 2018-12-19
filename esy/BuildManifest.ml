@@ -18,7 +18,6 @@ module ExportedEnv = PackageConfig.ExportedEnv
 module Env = PackageConfig.Env
 module DistResolver = EsyInstall.DistResolver
 module Override = EsyInstall.Override
-module Overrides = EsyInstall.Overrides
 module Installation = EsyInstall.Installation
 
 let ensurehasOpamScope name =
@@ -95,10 +94,10 @@ let empty ~name ~version () = {
   buildEnv = StringMap.empty;
 }
 
-let applyOverride (manifest : t) (override : Override.build) =
+let applyOverride (manifest : t) (override : Override.Build.override) =
 
   let {
-    Override.
+    Override.Build.
     buildType;
     build;
     install;
@@ -162,7 +161,7 @@ let applyOverride (manifest : t) (override : Override.build) =
       }
   in
 
-  manifest
+  Run.return manifest
 
 module EsyBuild = struct
   type packageJson = {
@@ -373,15 +372,15 @@ let ofInstallationLocation ~cfg (pkg : Package.t) (loc : Installation.location) 
   match pkg.source with
   | Link { path; manifest; } ->
     let source = Source.Dist (Dist.LocalPath {path; manifest;}) in
-    let%bind res =
+    let%bind { DistResolver. override; source = _; manifest; paths } =
       DistResolver.resolve
+        ~override:pkg.override
         ~cfg:cfg.Config.installCfg
         ~sandbox:cfg.spec
         source
     in
-    let overrides = Overrides.merge pkg.overrides res.DistResolver.overrides in
     let%bind manifest =
-      begin match res.DistResolver.manifest with
+      begin match manifest with
       | Some {kind = ManifestSpec.Filename.Esy; filename = _; data; suggestedPackageName = _;} ->
         RunAsync.ofRun (EsyBuild.ofData data)
       | Some {kind = ManifestSpec.Filename.Opam; filename = _; data; suggestedPackageName;} ->
@@ -393,25 +392,25 @@ let ofInstallationLocation ~cfg (pkg : Package.t) (loc : Installation.location) 
     in
     begin match manifest with
     | None ->
-      if Overrides.isEmpty overrides
-      then return (None, res.DistResolver.paths)
+      if Override.isEmpty override
+      then return (None, paths)
       else
         let manifest = empty ~name:None ~version:None () in
-        let%bind manifest =
-          Overrides.foldWithBuildOverrides
+        let%bind manifest = RunAsync.ofRun (
+          Override.Build.fold
             ~f:applyOverride
             ~init:manifest
-            overrides
-        in
-        return (Some manifest, res.DistResolver.paths)
+            override
+        ) in
+        return (Some manifest, paths)
     | Some manifest ->
-      let%bind manifest =
-        Overrides.foldWithBuildOverrides
+      let%bind manifest = RunAsync.ofRun (
+        Override.Build.fold
           ~f:applyOverride
           ~init:manifest
-          overrides
-      in
-      return (Some manifest, res.DistResolver.paths)
+          override
+      ) in
+      return (Some manifest, paths)
     end
 
   | Install { source = source, _; opam = _ } ->
@@ -423,12 +422,12 @@ let ofInstallationLocation ~cfg (pkg : Package.t) (loc : Installation.location) 
           ~version:(Some version)
           opamfile
       in
-      let%bind manifest =
-        Overrides.foldWithBuildOverrides
+      let%bind manifest = RunAsync.ofRun (
+        Override.Build.fold
           ~f:applyOverride
           ~init:manifest
-          pkg.overrides
-      in
+          pkg.override
+      ) in
       return (Some manifest, Path.Set.empty)
     | None ->
       let manifest = Dist.manifest source in
@@ -436,24 +435,24 @@ let ofInstallationLocation ~cfg (pkg : Package.t) (loc : Installation.location) 
       let%bind manifest =
         match manifest with
         | Some manifest ->
-          let%bind manifest =
-            Overrides.foldWithBuildOverrides
+          let%bind manifest = RunAsync.ofRun (
+            Override.Build.fold
               ~f:applyOverride
               ~init:manifest
-              pkg.overrides
-          in
+              pkg.override
+          ) in
           return (Some manifest)
         | None ->
-          if Overrides.isEmpty pkg.overrides
+          if Override.isEmpty pkg.override
           then return None
           else
             let manifest = empty ~name:None ~version:None () in
-            let%bind manifest =
-              Overrides.foldWithBuildOverrides
+            let%bind manifest = RunAsync.ofRun (
+              Override.Build.fold
                 ~f:applyOverride
                 ~init:manifest
-                pkg.overrides
-            in
+                pkg.override
+            ) in
             return (Some manifest)
       in
       return (manifest, paths)

@@ -37,7 +37,7 @@ type t = {
   originalVersion : EsyInstall.Version.t option;
   originalName : string option;
   source : EsyInstall.PackageSource.t;
-  overrides : EsyInstall.Overrides.t;
+  override : EsyInstall.Override.t;
   dependencies: Dependencies.t;
   devDependencies: Dependencies.t;
   peerDependencies: NpmFormula.t;
@@ -54,6 +54,8 @@ val isOpamPackageName : string -> bool
 
 val pp : t Fmt.t
 val compare : t -> t -> int
+
+val override : (EsyInstall.Override.t -> EsyInstall.Override.t) -> t -> t
 
 val to_yojson : t Json.encoder
 

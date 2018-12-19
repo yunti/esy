@@ -23,7 +23,7 @@ module PackageOverride = struct
 end
 
 type resolution = {
-  overrides : Overrides.t;
+  override : Override.t;
   source : Source.t;
   manifest : manifest option;
   paths : Path.Set.t;
@@ -184,7 +184,7 @@ let ofPath ?manifest (path : Path.t) =
     ]
 
 let resolve
-  ?(overrides=Overrides.empty)
+  ~override
   ~cfg
   ~sandbox
   (source : Source.t) =
@@ -234,29 +234,28 @@ let resolve
       return (EmptyManifest, Path.Set.empty)
   in
 
-  let rec loop' ~overrides ~paths source =
+  let rec loop' ~override ~paths source =
     match%bind resolve' source with
     | EmptyManifest, newPaths ->
       return {
         manifest = None;
-        overrides;
+        override;
         source;
         paths = Path.Set.union paths newPaths;
       }
     | Manifest manifest, newPaths ->
       return {
         manifest = Some manifest;
-        overrides;
+        override;
         source;
         paths = Path.Set.union paths newPaths;
       }
     | Override {source = nextSource; override = json;}, newPaths ->
-      let override = Override.ofSource json source in
+      let override = Override.ofSource json source override in
       let%bind nextDist = RunAsync.ofRun (rebase ~base:source nextSource) in
       Logs_lwt.debug (fun m -> m "override: %a -> %a@." Source.pp source Source.pp nextSource);%lwt
-      let overrides = Overrides.add override overrides in
       let paths = Path.Set.union paths newPaths in
-      loop' ~overrides ~paths nextDist
+      loop' ~override ~paths nextDist
   in
 
-  loop' ~overrides ~paths:Path.Set.empty source
+  loop' ~override ~paths:Path.Set.empty source

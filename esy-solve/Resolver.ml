@@ -81,7 +81,7 @@ let emptyLink ~name ~path ~manifest () =
       path;
       manifest = None;
     };
-    overrides = EsyInstall.Overrides.empty;
+    override = EsyInstall.Override.Empty;
     dependencies = Package.Dependencies.NpmFormula [];
     devDependencies = Package.Dependencies.NpmFormula [];
     peerDependencies = EsyInstall.PackageConfig.NpmFormula.empty;
@@ -107,7 +107,7 @@ let emptyInstall ~name ~source () =
     originalVersion = None;
     originalName = None;
     source;
-    overrides = EsyInstall.Overrides.empty;
+    override = EsyInstall.Override.Empty;
     dependencies = Package.Dependencies.NpmFormula [];
     devDependencies = Package.Dependencies.NpmFormula [];
     peerDependencies = EsyInstall.PackageConfig.NpmFormula.empty;
@@ -223,7 +223,7 @@ let versionMatchesDep (resolver : t) (dep : Package.Dep.t) name (version : EsyIn
   in
   dep.name = name && (checkResolutions () || checkVersion ())
 
-let packageOfSource ~name ~overrides (source : EsyInstall.Source.t) resolver =
+let packageOfSource ~name ~override (source : EsyInstall.Source.t) resolver =
   let open RunAsync.Syntax in
 
   let readPackage ~name ~source {EsyInstall.DistResolver. kind; filename = _; data; suggestedPackageName} =
@@ -254,11 +254,11 @@ let packageOfSource ~name ~overrides (source : EsyInstall.Source.t) resolver =
   in
 
   let pkg =
-    let%bind { EsyInstall.DistResolver. overrides; source = resolvedSource; manifest; _; } =
+    let%bind { EsyInstall.DistResolver. override; source = resolvedSource; manifest; _; } =
       EsyInstall.DistResolver.resolve
         ~cfg:resolver.cfg.installCfg
         ~sandbox:resolver.sandbox
-        ~overrides
+        ~override
         source
     in
 
@@ -279,7 +279,7 @@ let packageOfSource ~name ~overrides (source : EsyInstall.Source.t) resolver =
       | Some manifest ->
         readPackage ~name ~source:resolvedSource manifest
       | None ->
-        if not (EsyInstall.Overrides.isEmpty overrides)
+        if not (EsyInstall.Override.isEmpty override)
         then
           match source with
           | EsyInstall.Source.Link {path; manifest;} ->
@@ -293,7 +293,7 @@ let packageOfSource ~name ~overrides (source : EsyInstall.Source.t) resolver =
 
     let pkg =
       match pkg with
-      | Ok pkg -> Ok {pkg with Package.overrides}
+      | Ok pkg -> Ok {pkg with Package.override;}
       | err -> err
     in
 
@@ -305,9 +305,9 @@ let packageOfSource ~name ~overrides (source : EsyInstall.Source.t) resolver =
   RunAsync.contextf pkg
     "reading package metadata from %a" EsyInstall.Source.ppPretty source
 
-let applyOverride pkg (override : EsyInstall.Override.install) =
+let applyOverride pkg (override : EsyInstall.Override.Install.override) =
   let {
-    EsyInstall.Override.
+    EsyInstall.Override.Install.
     dependencies;
     devDependencies;
     resolutions;
@@ -399,7 +399,7 @@ let applyOverride pkg (override : EsyInstall.Override.install) =
       {pkg with Package.resolutions;}
     | None -> pkg
   in
-  pkg
+  Run.return pkg
 
 let package ~(resolution : Resolution.t) resolver =
   let open RunAsync.Syntax in
@@ -417,25 +417,15 @@ let package ~(resolution : Resolution.t) resolver =
       in
       return (Ok pkg)
     | EsyInstall.Version.Opam version ->
-      begin match%bind
-        let%bind name = RunAsync.ofRun (requireOpamName resolution.name) in
-        OpamRegistry.version
-          ~name
-          ~version
-          resolver.opamRegistry
-      with
-        | Some manifest ->
-          OpamManifest.toPackage
-            ~name:resolution.name
-            ~version:(EsyInstall.Version.Opam version)
-            manifest
-        | None ->
-          errorf "no such opam package: %a" Resolution.pp resolution
-      end
+      let%bind name = RunAsync.ofRun (requireOpamName resolution.name) in
+      OpamRegistry.package
+        name
+        version
+        resolver.opamRegistry
 
     | EsyInstall.Version.Source source ->
       packageOfSource
-        ~overrides:EsyInstall.Overrides.empty
+        ~override:EsyInstall.Override.Empty
         ~name:resolution.name
         source
         resolver
@@ -446,22 +436,22 @@ let package ~(resolution : Resolution.t) resolver =
       match resolution.resolution with
       | Version version -> ofVersion version
       | SourceOverride {source; override} ->
-        let override = EsyInstall.Override.ofJson override in
-        let overrides = EsyInstall.Overrides.(add override empty) in
+        let override = EsyInstall.Override.(ofJson override Empty) in
         packageOfSource
           ~name:resolution.name
-          ~overrides
+          ~override
           source
           resolver
     in
     match pkg with
     | Ok pkg ->
       let%bind pkg =
-        EsyInstall.Overrides.foldWithInstallOverrides
-          ~f:applyOverride
-          ~init:pkg
-          pkg.overrides
-        in
+        RunAsync.ofRun (
+          EsyInstall.Override.Install.fold
+            ~f:applyOverride
+            ~init:pkg
+            pkg.override
+        ) in
       return (Ok pkg)
     | err -> return err
   end

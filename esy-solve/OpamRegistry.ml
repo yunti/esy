@@ -190,7 +190,7 @@ let versions ?ocamlVersion ~(name : OpamPackage.Name.t) registry =
     in
     return (List.filterNone resolutions)
 
-let version ~(name : OpamPackage.Name.t) ~version registry =
+let resolveVersion name version registry =
   let open RunAsync.Syntax in
 
   if not (isEnabledForEsy name)
@@ -201,25 +201,44 @@ let version ~(name : OpamPackage.Name.t) ~version registry =
   match%bind resolve ~name ~version registry with
   | None -> return None
   | Some res ->
-    let%bind manifest =
-      let%bind opam = readOpamFileOfRegistry res registry in
-      let%bind url =
-        match OpamFile.OPAM.url opam with
-        | Some url -> return (Some url)
-        | None -> readUrlFileOfRegistry res registry
-      in
-      return {
-        OpamManifest.name;
-        version;
-        opam;
-        url;
-        override = None;
-        opamRepositoryPath = Some (OpamResolution.path res);
-      }
+    let%bind opam = readOpamFileOfRegistry res registry in
+    let%bind url =
+      match OpamFile.OPAM.url opam with
+      | Some url -> return (Some url)
+      | None -> readUrlFileOfRegistry res registry
     in
+    return (Some {
+      OpamManifest.name;
+      version;
+      opam;
+      url;
+      opamRepositoryPath = Some (OpamResolution.path res);
+    })
+
+let package name version registry =
+  let open RunAsync.Syntax in
+
+  let findOverride pkg =
+    let%bind registry = initRegistry registry in
     begin match%bind OpamOverrides.find ~name ~version registry.overrides with
-    | None -> return (Some manifest)
+    | None -> return pkg
     | Some override ->
-      let manifest = {manifest with OpamManifest. override = Some override;} in
-      return (Some manifest)
+      return (Package.override override pkg)
+    end
+  in
+
+  match%bind resolveVersion name version registry with
+  | None -> return (Error "no package found")
+  | Some manifest ->
+    let%bind pkg =
+      OpamManifest.toPackage
+        ~name:("@opam/" ^ OpamPackage.Name.to_string name)
+        ~version:(EsyInstall.Version.Opam version)
+        manifest
+    in
+    begin match pkg with
+    | Ok pkg ->
+      let%bind pkg = findOverride pkg in
+      return (Ok pkg)
+    | Error _ -> return pkg
     end

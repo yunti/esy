@@ -88,7 +88,7 @@ let find = (~name: OpamPackage.Name.t, ~version, overrides) =>
       | (Some(path), _)
       | (None, Some(path)) =>
         let%bind json = Fs.readJsonFile(Path.(path / "package.json"));
-        let override = EsyInstall.Override.OfOpamOverride({json, path});
+        let override = prev => EsyInstall.Override.ofOpam(json, path, prev);
         return(Some(override));
       | (None, None) => return(None)
       };

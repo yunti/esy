@@ -118,7 +118,7 @@ type t = {
   originalVersion : EsyInstall.Version.t option;
   originalName : string option;
   source : EsyInstall.PackageSource.t;
-  overrides : EsyInstall.Overrides.t;
+  override : EsyInstall.Override.t;
   dependencies: Dependencies.t;
   devDependencies: Dependencies.t;
   peerDependencies: NpmFormula.t;
@@ -130,6 +130,9 @@ type t = {
 and kind =
   | Esy
   | Npm
+
+let override overrideWith pkg =
+  {pkg with override = overrideWith pkg.override;}
 
 let pp fmt pkg =
   Fmt.pf fmt "%s@%a" pkg.name EsyInstall.Version.pp pkg.version

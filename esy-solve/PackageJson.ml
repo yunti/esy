@@ -128,7 +128,7 @@ let packageOfJson
     version;
     originalVersion;
     originalName = pkgJson.name;
-    overrides = EsyInstall.Overrides.empty;
+    override = EsyInstall.Override.Empty;
     dependencies = Package.Dependencies.NpmFormula dependencies;
     devDependencies = Package.Dependencies.NpmFormula devDependencies;
     peerDependencies = pkgJson.peerDependencies;

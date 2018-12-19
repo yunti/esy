@@ -3,7 +3,7 @@ type t = {
   name: string;
   version: Version.t;
   source: PackageSource.t;
-  overrides: Overrides.t;
+  override: Override.t;
   dependencies : PackageId.Set.t;
   devDependencies : PackageId.Set.t;
 }

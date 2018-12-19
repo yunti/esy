@@ -43,7 +43,7 @@ and node = {
   name: string;
   version: Version.t;
   source: PackageSource.t;
-  overrides: overrides;
+  override: overrides;
   dependencies : PackageId.Set.t;
   devDependencies : PackageId.Set.t;
 }
@@ -76,39 +76,48 @@ end
 
 let writeOverride sandbox pkg override =
   let open RunAsync.Syntax in
-  match override with
-  | Override.OfJson {json;} -> return (OfJson {json;})
-  | Override.OfOpamOverride info ->
-    let id =
-      Format.asprintf "%s-%a-opam-override"
-        pkg.Package.name
-        Version.pp
-        pkg.version
-    in
-    let lockPath = Path.(
-      SandboxSpec.solutionLockPath sandbox.Sandbox.spec
-      / "overrides"
-      / Path.safeSeg id
-    ) in
-    let%bind () = Fs.copyPath ~src:info.path ~dst:lockPath in
-    let path = DistPath.ofPath (Path.tryRelativize ~root:sandbox.spec.path lockPath) in
-    return (OfOpamOverride {path;})
-  | Override.OfSource {source = Source.Link local; json = _;} ->
-    return (OfPath local)
-  | Override.OfSource {source = Source.Dist dist; json = _;} ->
-    let%bind distPath = DistStorage.fetchIntoCache ~cfg:sandbox.cfg ~sandbox:sandbox.spec dist in
-    let digest = Digestv.ofString (Dist.show dist) in
-    let lockPath = Path.(
-      SandboxSpec.solutionLockPath sandbox.Sandbox.spec
-      / "overrides"
-      / Digestv.toHex digest
-    ) in
-    let%bind () = Fs.copyPath ~src:distPath ~dst:lockPath in
-    let manifest = Dist.manifest dist in
-    let path = DistPath.ofPath (Path.tryRelativize ~root:sandbox.spec.path lockPath) in
-    return (OfPath {path; manifest})
+  let rec write override =
+    match override with
+    | Override.Empty -> return []
+    | Override.Override { json; prev; kind = Json; } ->
+      let%bind rest = write prev in
+      return (OfJson {json;}::rest)
+    | Override.Override { json = _; prev; kind = Opam path; } ->
+      let%bind rest = write prev in
+      let id =
+        Format.asprintf "%s-%a-opam-override"
+          pkg.Package.name
+          Version.pp
+          pkg.version
+      in
+      let lockPath = Path.(
+        SandboxSpec.solutionLockPath sandbox.Sandbox.spec
+        / "overrides"
+        / Path.safeSeg id
+      ) in
+      let%bind () = Fs.copyPath ~src:path ~dst:lockPath in
+      let path = DistPath.ofPath (Path.tryRelativize ~root:sandbox.spec.path lockPath) in
+      return (OfOpamOverride {path;}::rest)
+    | Override.Override { json = _; prev; kind = Source (Source.Link local); } ->
+      let%bind rest = write prev in
+      return (OfPath local::rest)
+    | Override.Override { json = _; prev; kind = Source (Source.Dist dist); } ->
+      let%bind rest = write prev in
+      let%bind distPath = DistStorage.fetchIntoCache ~cfg:sandbox.cfg ~sandbox:sandbox.spec dist in
+      let digest = Digestv.ofString (Dist.show dist) in
+      let lockPath = Path.(
+        SandboxSpec.solutionLockPath sandbox.Sandbox.spec
+        / "overrides"
+        / Digestv.toHex digest
+      ) in
+      let%bind () = Fs.copyPath ~src:distPath ~dst:lockPath in
+      let manifest = Dist.manifest dist in
+      let path = DistPath.ofPath (Path.tryRelativize ~root:sandbox.spec.path lockPath) in
+      return (OfPath {path; manifest}::rest)
+  in
+  write override
 
-let readOverride sandbox override =
+let readOverride sandbox nodes =
   let open RunAsync.Syntax in
   let readJsonOfLocal (local : Dist.local) =
     let filename =
@@ -122,25 +131,24 @@ let readOverride sandbox override =
     let%bind json = PackageOverride.ofPath path in
     return json
   in
-  match override with
-  | OfJson {json;} -> return (Override.OfJson {json;})
-  | OfOpamOverride {path;} ->
-    let path = DistPath.toPath sandbox.Sandbox.spec.path path in
-    let%bind json = Fs.readJsonFile Path.(path / "package.json") in
-    return (Override.OfOpamOverride {json; path;})
-  | OfPath local ->
-    let dist = Dist.LocalPath local in
-    let%bind json = readJsonOfLocal local in
-    return (Override.OfSource {source = Source.Dist dist; json;})
-  | OfLink local ->
-    let%bind json = readJsonOfLocal local in
-    return (Override.OfSource {source = Source.Link local; json;})
-
-let writeOverrides sandbox pkg overrides =
-  RunAsync.List.mapAndJoin ~f:(writeOverride sandbox pkg) overrides
-
-let readOverrides sandbox overrides =
-  RunAsync.List.mapAndJoin ~f:(readOverride sandbox) overrides
+  let f override node =
+    match node with
+    | OfJson {json;} ->
+      let override = Override.ofJson json override in
+      return override
+    | OfOpamOverride {path;} ->
+      let path = DistPath.toPath sandbox.Sandbox.spec.path path in
+      let%bind json = Fs.readJsonFile Path.(path / "package.json") in
+      return (Override.ofOpam json path override)
+    | OfPath local ->
+      let dist = Dist.LocalPath local in
+      let%bind json = readJsonOfLocal local in
+      return (Override.ofSource json (Source.Dist dist) override)
+    | OfLink local ->
+      let%bind json = readJsonOfLocal local in
+      return (Override.ofSource json (Source.Link local) override)
+  in
+  RunAsync.List.foldLeft ~f ~init:Override.Empty nodes
 
 let writeOpam sandbox (opam : PackageSource.opam) =
   let open RunAsync.Syntax in
@@ -174,13 +182,13 @@ let writePackage sandbox (pkg : Package.t) =
       let%bind opam = writeOpam sandbox opam in
       return (PackageSource.Install {source; opam = Some opam;});
   in
-  let%bind overrides = writeOverrides sandbox pkg pkg.overrides in
+  let%bind override = writeOverride sandbox pkg pkg.override in
   return {
     id = pkg.id;
     name = pkg.name;
     version = pkg.version;
     source;
-    overrides;
+    override;
     dependencies = pkg.dependencies;
     devDependencies = pkg.devDependencies;
   }
@@ -195,14 +203,14 @@ let readPackage sandbox (node : node) =
       let%bind opam = readOpam sandbox opam in
       return (PackageSource.Install {source; opam = Some opam;});
   in
-  let%bind overrides = readOverrides sandbox node.overrides in
+  let%bind override = readOverride sandbox node.override in
   return {
     Package.
     id = node.id;
     name = node.name;
     version = node.version;
     source;
-    overrides;
+    override;
     dependencies = node.dependencies;
     devDependencies = node.devDependencies;
   }

@@ -382,10 +382,10 @@ end = struct
     in
 
     let%bind filesOfOverride =
-      Overrides.files
+      Override.files
         sandbox.Sandbox.cfg
         sandbox.Sandbox.spec
-        pkg.Package.overrides
+        pkg.Package.override
     in
 
     RunAsync.List.mapAndWait

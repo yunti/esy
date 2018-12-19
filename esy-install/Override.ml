@@ -1,69 +1,106 @@
 type t =
-  | OfJson of {json : Json.t;}
-  | OfSource of {source : Source.t; json : Json.t;}
-  | OfOpamOverride of {
-      path : Path.t;
-      json : Json.t;
-    }
+  | Empty
+  | Override of {prev : t; json : Json.t; kind : kind;}
 
-module BuildType = struct
-  include EsyLib.BuildType
-  include EsyLib.BuildType.AsInPackageJson
-end
-
-type build = {
-  buildType : BuildType.t option [@default None] [@key "buildsInSource"];
-  build : PackageConfig.CommandList.t option [@default None];
-  install : PackageConfig.CommandList.t option [@default None];
-  exportedEnv: PackageConfig.ExportedEnv.t option [@default None];
-  exportedEnvOverride: PackageConfig.ExportedEnvOverride.t option [@default None];
-  buildEnv: PackageConfig.Env.t option [@default None];
-  buildEnvOverride: PackageConfig.EnvOverride.t option [@default None];
-} [@@deriving of_yojson { strict = false }]
-
-type install = {
-  dependencies : PackageConfig.NpmFormulaOverride.t option [@default None];
-  devDependencies : PackageConfig.NpmFormulaOverride.t option [@default None];
-  resolutions : PackageConfig.Resolution.resolution StringMap.t option [@default None];
-} [@@deriving of_yojson { strict = false }]
+and kind =
+  | Json
+  | Source of Source.t
+  | Opam of Path.t
 
 let pp fmt = function
-  | OfJson _ -> Fmt.unit "<inline override>" fmt ()
-  | OfSource {source; json = _;} -> Fmt.pf fmt "override:%a" Source.pp source
-  | OfOpamOverride info -> Fmt.pf fmt "opam-override:%a" Path.pp info.path
+  | Empty -> Fmt.unit "<no override>" fmt ()
+  | Override {kind = Json; _} -> Fmt.unit "<inline override>" fmt ()
+  | Override {kind = Source source; _} -> Fmt.pf fmt "override:%a" Source.pp source
+  | Override {kind = Opam path; _} -> Fmt.pf fmt "opam-override:%a" Path.pp path
 
-let json override =
-  let open RunAsync.Syntax in
-  match override with
-  | OfJson info -> return info.json
-  | OfSource info -> return info.json
-  | OfOpamOverride info -> return info.json
+let ofJson json prev = Override {json; prev; kind = Json;}
+let ofSource json source prev = Override {json; prev; kind = Source source;}
+let ofOpam json path prev = Override {json; prev; kind = Opam path;}
 
-let build override =
-  let open RunAsync.Syntax in
-  let%bind json = json override in
-  let%bind override = RunAsync.ofStringError (build_of_yojson json) in
-  return (Some override)
+let isEmpty = function
+  | Empty -> true
+  | Override _ -> false
 
-let install override =
-  let open RunAsync.Syntax in
-  let%bind json = json override in
-  let%bind override = RunAsync.ofStringError (install_of_yojson json) in
-  return (Some override)
-
-let ofJson json = OfJson {json;}
-let ofSource json source = OfSource {json; source;}
+let fold' ~f ~init override =
+  let open Run.Syntax in
+  let rec aux value override =
+    match override with
+    | Empty -> return value
+    | Override {json; prev; kind;} ->
+      let%bind value = aux value prev in
+      let%bind value = f value json kind in
+      return value
+  in
+  aux init override
 
 let files cfg sandbox override =
   let open RunAsync.Syntax in
 
-  match override with
-  | OfJson _ -> return []
-  | OfSource { source = Source.Dist dist; json = _; } ->
-    let%bind path = DistStorage.fetchIntoCache ~cfg ~sandbox dist in
-    File.ofDir Path.(path / "files")
-  | OfSource { source = Source.Link local; json = _; } ->
-    let path = DistPath.toPath sandbox.path local.path in
-    File.ofDir Path.(path / "files")
-  | OfOpamOverride info ->
-    File.ofDir Path.(info.path / "files")
+  let collectOfKind kind =
+    match kind with
+    | Json -> return []
+    | Source Dist dist ->
+      let%bind path = DistStorage.fetchIntoCache ~cfg ~sandbox dist in
+      File.ofDir Path.(path / "files")
+    | Source Link local ->
+      let path = DistPath.toPath sandbox.path local.path in
+      File.ofDir Path.(path / "files")
+    | Opam path ->
+      File.ofDir Path.(path / "files")
+  in
+
+  let rec collect files override =
+    match override with
+    | Empty -> return files
+    | Override {json = _; prev; kind ;} ->
+      let%bind files = collect files prev in
+      let%bind thisFiles = collectOfKind kind in
+      return (files @ thisFiles)
+  in
+
+  collect [] override
+
+module Build = struct
+
+  module BuildType = struct
+    include EsyLib.BuildType
+    include EsyLib.BuildType.AsInPackageJson
+  end
+
+  type override = {
+    buildType : BuildType.t option [@default None] [@key "buildsInSource"];
+    build : PackageConfig.CommandList.t option [@default None];
+    install : PackageConfig.CommandList.t option [@default None];
+    exportedEnv: PackageConfig.ExportedEnv.t option [@default None];
+    exportedEnvOverride: PackageConfig.ExportedEnvOverride.t option [@default None];
+    buildEnv: PackageConfig.Env.t option [@default None];
+    buildEnvOverride: PackageConfig.EnvOverride.t option [@default None];
+  } [@@deriving of_yojson { strict = false }]
+
+  let fold ~f ~init override =
+    let open Run.Syntax in
+    let f v json _kind =
+      let%bind override = Run.ofStringError (override_of_yojson json) in
+      f v override
+    in
+    fold' ~f ~init override
+
+end
+
+module Install = struct
+
+  type override = {
+    dependencies : PackageConfig.NpmFormulaOverride.t option [@default None];
+    devDependencies : PackageConfig.NpmFormulaOverride.t option [@default None];
+    resolutions : PackageConfig.Resolution.resolution StringMap.t option [@default None];
+  } [@@deriving of_yojson { strict = false }]
+
+  let fold ~f ~init override =
+    let open Run.Syntax in
+    let f v json _kind =
+      let%bind override = Run.ofStringError (override_of_yojson json) in
+      f v override
+    in
+    fold' ~f ~init override
+
+end
