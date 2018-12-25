@@ -5,7 +5,8 @@ ESY_VERSION := $(shell esy version)
 ESY_VERSION_MINOR :=$(word 2, $(subst ., ,$(ESY_VERSION)))
 
 BIN = $(PWD)/node_modules/.bin
-PROJECTS = esy esy-build-package esyi
+PROJECTS := $(shell find . -d -name dune -depth 2 -type f)
+PROJECTS := $(foreach f,$(PROJECTS),$(shell dirname $f))
 VERSION = $(shell esy node -p "require('./package.json').version")
 PLATFORM = $(shell uname | tr '[A-Z]' '[a-z]')
 NPM_RELEASE_TAG ?= latest
@@ -80,21 +81,6 @@ clean:
 build:
 	@esy b dune build -j 4 $(TARGETS)
 
-esy::
-	@esy b dune build -j 4 _build/default/esy/Esy.cmxa
-
-esyi::
-	@esy b dune build -j 4 _build/default/esyi/EsyInstall.cmxa
-
-esy-build-package::
-	@esy b dune build -j 4 _build/default/esy-build-package/EsyBuildPackage.cmxa
-
-esy-installer::
-	@esy b dune build -j 4 _build/default/esy-installer/EsyInstaller.cmxa
-
-esy-lib::
-	@esy b dune build -j 4 _build/default/esy-lib/EsyLib.cmxa
-
 doc:
 	@esy b dune build @doc
 
@@ -103,6 +89,7 @@ build-dev:
 	@esy b dune build -j 4 $(TARGETS)
 
 refmt::
+	@echo 'Running refmt...'
 	@find $(PROJECTS) -name '*.re' \
 		| xargs -n1 esy refmt --in-place --print-width 80
 
