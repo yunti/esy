@@ -5,7 +5,7 @@ ESY_VERSION := $(shell esy version)
 ESY_VERSION_MINOR :=$(word 2, $(subst ., ,$(ESY_VERSION)))
 
 BIN = $(PWD)/node_modules/.bin
-PROJECTS := $(shell find . -d -name dune -depth 2 -type f)
+PROJECTS ?= $(shell find . -d -name dune -depth 2 -type f)
 PROJECTS := $(foreach f,$(PROJECTS),$(shell dirname $f))
 VERSION = $(shell esy node -p "require('./package.json').version")
 PLATFORM = $(shell uname | tr '[A-Z]' '[a-z]')
@@ -88,10 +88,19 @@ b: build-dev
 build-dev:
 	@esy b dune build -j 4 $(TARGETS)
 
+REFMT_OPTIONS = --print-width 80
+
 refmt::
-	@echo 'Running refmt...'
-	@find $(PROJECTS) -name '*.re' \
-		| xargs -n1 esy refmt --in-place --print-width 80
+	@echo 'Running refmt ...'
+	@find $(PROJECTS) -name '*.re' -type f \
+		| xargs -n1 esy refmt --in-place $(REFMT_OPTIONS)
+
+ml-to-re::
+	@echo 'Converting *.ml to *.re ...'
+	$(MAKE) PROJECTS=$(PROJECTS) $(foreach fn,$(shell find $(PROJECTS) -name '*.ml' -type f),$(fn:%.ml=%.re))
+
+%.re: %.ml
+	esy refmt --parse ml --print re $(REFMT_OPTIONS) $(<) > $(@)
 
 #
 # Test
