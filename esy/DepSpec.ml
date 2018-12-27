@@ -46,6 +46,10 @@ let%test_module "parsing" = (module struct
     [%expect {| (Union (DevDependencies Self) (Dependencies Root)) |}]
 
   let%expect_test _ =
+    parseAndPrint "dependencies(root) - devDependencies(self)";
+    [%expect {| (Diff (Dependencies Root) (DevDependencies Self)) |}]
+
+  let%expect_test _ =
     parseAndPrint "package('name')";
     [%expect {| (Package (ByName name)) |}]
 

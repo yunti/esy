@@ -11,6 +11,7 @@ rule read = parse
  | '('          { DepSpecParser.LPAREN }
  | ')'          { DepSpecParser.RPAREN }
  | '+'          { DepSpecParser.PLUS }
+ | '-'          { DepSpecParser.MINUS }
  | '''          { literal (Buffer.create 16) lexbuf }
  | eof          { DepSpecParser.EOF }
  | _ as c       { raise (Error (Printf.sprintf "unexpected char: %c" c)) }

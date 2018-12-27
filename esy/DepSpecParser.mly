@@ -1,11 +1,12 @@
 %token <string> ID
 %token <string> STRING
 %token PLUS
+%token MINUS
 %token LPAREN
 %token RPAREN
 %token EOF
 
-%left PLUS
+%left PLUS MINUS
 
 %{
 
@@ -23,6 +24,7 @@ expr:
     e = select { e }
   | e = package { e }
   | e = union { e }
+  | e = diff { e }
 
 id:
     id = ID; {
@@ -51,6 +53,11 @@ select:
 union:
   a = expr; PLUS; b = expr {
     DepSpecImpl.(a + b)
+  }
+
+diff:
+  a = expr; MINUS; b = expr {
+    DepSpecImpl.(a - b)
   }
 
 %%
