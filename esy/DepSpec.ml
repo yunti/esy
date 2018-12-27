@@ -46,26 +46,26 @@ let%test_module "parsing" = (module struct
     [%expect {| (Union (DevDependencies Self) (Dependencies Root)) |}]
 
   let%expect_test _ =
-    parseAndPrint "name";
+    parseAndPrint "package('name')";
     [%expect {| (Package (ByName name)) |}]
 
   let%expect_test _ =
-    parseAndPrint "name-x";
+    parseAndPrint "package('name-x')";
     [%expect {| (Package (ByName name-x)) |}]
 
   let%expect_test _ =
-    parseAndPrint "name_x";
+    parseAndPrint "package('name_x')";
     [%expect {| (Package (ByName name_x)) |}]
 
   let%expect_test _ =
-    parseAndPrint "@scope/name";
+    parseAndPrint "package('@scope/name')";
     [%expect {| (Package (ByName @scope/name)) |}]
 
   let%expect_test _ =
-    parseAndPrint "@scope-x/name";
+    parseAndPrint "package('@scope-x/name')";
     [%expect {| (Package (ByName @scope-x/name)) |}]
 
   let%expect_test _ =
-    parseAndPrint "dependencies(@scope/root) + @scope/b";
+    parseAndPrint "dependencies(package('@scope/root')) + package('@scope/b')";
     [%expect {| (Union (Dependencies (ByName @scope/root)) (Package (ByName @scope/b))) |}]
 end)

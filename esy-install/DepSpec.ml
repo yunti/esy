@@ -7,6 +7,7 @@ module type DEPSPEC = sig
     | Dependencies of id
     | DevDependencies of id
     | Union of t * t
+    | Diff of t * t
   (* term *)
 
   val package : id -> t
@@ -21,8 +22,14 @@ module type DEPSPEC = sig
   val union : t -> t -> t
   (** [union a b] produces a new term with all packages defined by [a] and * [b] *)
 
+  val diff : t -> t -> t
+  (** [diff a b] produces a new term with all packages in [a] which are not in [b] *)
+
   val (+) : t -> t -> t
   (** [a + b] is the same as [union a b] *)
+
+  val (-) : t -> t -> t
+  (** [a - b] is the same as [diff a b] *)
 
   val compare : t -> t -> int
   val pp : Format.formatter -> t -> unit
@@ -45,6 +52,7 @@ module Make (Id : ID) : DEPSPEC with type id = Id.t = struct
     | Dependencies of Id.t
     | DevDependencies of Id.t
     | Union of t * t
+    | Diff of t * t
     [@@deriving ord, sexp_of]
 
   let package src = Package src
@@ -56,7 +64,10 @@ module Make (Id : ID) : DEPSPEC with type id = Id.t = struct
     then Union (a, b)
     else Union (b, a)
 
+  let diff a b = Diff (a, b)
+
   let (+) = union
+  let (-) = diff
 
   let rec pp fmt spec =
     match spec with
@@ -64,4 +75,5 @@ module Make (Id : ID) : DEPSPEC with type id = Id.t = struct
     | Dependencies id -> Fmt.pf fmt "dependencies(%a)" Id.pp id
     | DevDependencies id -> Fmt.pf fmt "devDependencies(%a)" Id.pp id
     | Union (a, b) -> Fmt.pf fmt "%a+%a" pp a pp b
+    | Diff (a, b) -> Fmt.pf fmt "%a-%a" pp a pp b
 end

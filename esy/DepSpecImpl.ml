@@ -56,6 +56,10 @@ let eval solution self depspec =
       let%bind a = eval' a in
       let%bind b = eval' b in
       return (PackageId.Set.union a b)
+    | Diff (a, b) ->
+      let%bind a = eval' a in
+      let%bind b = eval' b in
+      return (PackageId.Set.diff a b)
   in
   eval' depspec
 

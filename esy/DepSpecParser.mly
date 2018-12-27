@@ -1,6 +1,5 @@
 %token <string> ID
-%token AT
-%token SLASH
+%token <string> STRING
 %token PLUS
 %token LPAREN
 %token RPAREN
@@ -30,11 +29,12 @@ id:
       match id with
       | "root" -> DepSpecImpl.root
       | "self" -> DepSpecImpl.self
-      | name -> DepSpecImpl.name name
+      | _ -> $syntaxerror
     }
-  | AT; scope = ID; SLASH; name = ID; {
-      let name = "@" ^ scope ^ "/" ^ name in
-      DepSpecImpl.name name
+  | id = ID; LPAREN; arg = STRING; RPAREN; {
+      match id with
+      | "package" -> DepSpecImpl.name arg
+      | _ -> $syntaxerror
     }
 
 package:
