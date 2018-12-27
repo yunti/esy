@@ -312,13 +312,13 @@ let makeScope
       BuildSpec.classify buildspec mode sandbox.solution pkg buildManifest
     in
 
-    let matchedForBuild =
+    let%bind matchedForBuild =
       DepSpec.eval sandbox.solution pkg.Package.id build.deps
     in
 
-    let matchedForScope =
+    let%bind matchedForScope =
       match envspec with
-      | None -> matchedForBuild
+      | None -> return matchedForBuild
       | Some envspec -> DepSpec.eval sandbox.solution pkg.Package.id envspec
     in
 
@@ -747,13 +747,13 @@ let augmentEnvWithOptions (envspec : EnvSpec.t) sandbox scope =
     else env
   in
 
-  let env =
+  let%bind env =
     (* if envspec's DEPSPEC expression was provided we need to filter out env
      * bindings according to it. *)
     match augmentDeps with
-    | None -> env
+    | None -> return env
     | Some depspec ->
-      let matched =
+      let%bind matched =
         DepSpec.collect
           sandbox.solution
           depspec
@@ -770,7 +770,7 @@ let augmentEnvWithOptions (envspec : EnvSpec.t) sandbox scope =
         | None -> true
         | Some pkgid -> StringSet.mem pkgid matched
       in
-      List.filter ~f env
+      return (List.filter ~f env)
   in
 
   return (env, scope)

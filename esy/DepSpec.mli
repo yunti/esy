@@ -5,6 +5,7 @@ type id
 
 val root : id
 val self : id
+val name : string -> id
 
 type t
 (** Dependency expression, *)
@@ -21,13 +22,13 @@ val devDependencies : id -> t
 val (+) : t -> t -> t
 (** [a + b] refers to all packages in [a] and in [b]. *)
 
-val eval : EsyInstall.Solution.t -> PackageId.t -> t -> PackageId.Set.t
+val eval : EsyInstall.Solution.t -> PackageId.t -> t -> PackageId.Set.t Run.t
 (**
  * [eval solution self depspec] evals [depspec] given the [solution] and the
  * current package id [self].
  *)
 
-val collect : EsyInstall.Solution.t -> t -> PackageId.t -> PackageId.Set.t
+val collect : EsyInstall.Solution.t -> t -> PackageId.t -> PackageId.Set.t Run.t
 (**
  * [collect solution depspec id] collects all package ids found in the
  * [solution] starting with [id] using [depspec] expression for traverse.
@@ -35,3 +36,5 @@ val collect : EsyInstall.Solution.t -> t -> PackageId.t -> PackageId.Set.t
 
 val compare : t -> t -> int
 val pp : t Fmt.t
+
+val parse : string -> (t, string) result

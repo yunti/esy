@@ -28,6 +28,7 @@ module type DEPSPEC = sig
 
   val compare : t -> t -> int
   val pp : Format.formatter -> t -> unit
+  val sexp_of_t : t -> Sexplib0.Sexp.t
 end
 
 module type ID = sig
@@ -35,6 +36,7 @@ module type ID = sig
 
   val compare : t -> t -> int
   val pp : Format.formatter -> t -> unit
+  val sexp_of_t : t -> Sexplib0.Sexp.t
 end
 
 module Make (Id : ID) : DEPSPEC with type id = Id.t

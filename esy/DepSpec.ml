@@ -1,49 +1,71 @@
-open EsyPackageConfig
+include DepSpecImpl
 
-module Id = struct
-  type t =
-    | Self
-    | Root
-    [@@deriving ord]
+let parse v =
+  let open Result.Syntax in
+  let lexbuf = Lexing.from_string v in
+  try return (DepSpecParser.start DepSpecLexer.read lexbuf) with
+  | DepSpecLexer.Error msg ->
+    errorf "error parsing DEPSPEC: %s" msg
+  | DepSpecParser.Error -> error "error parsing DEPSPEC"
 
-  let pp fmt = function
-    | Self -> Fmt.unit "self" fmt ()
-    | Root -> Fmt.unit "root" fmt ()
-end
+let%test_module "parsing" = (module struct
+  let parseAndPrint v =
+    match parse v with
+    | Error err ->
+      Format.printf "ERROR: %s@." err
+    | Ok v ->
+      let sexp = sexp_of_t v in
+      Format.printf "%a@." Sexplib0.Sexp.pp_hum sexp
 
-include EsyInstall.DepSpec.Make(Id)
+  let%expect_test _ =
+    parseAndPrint "self";
+    [%expect {| (Package Self) |}]
 
-let root = Id.Root
-let self = Id.Self
+  let%expect_test _ =
+    parseAndPrint "root";
+    [%expect {| (Package Root) |}]
 
-let resolve solution self id =
-  match id with
-  | Id.Root -> (EsyInstall.Solution.root solution).id
-  | Id.Self -> self
+  let%expect_test _ =
+    parseAndPrint "dependencies(root)";
+    [%expect {| (Dependencies Root) |}]
 
-let eval solution self depspec =
-  let resolve id = resolve solution self id in
-  let rec eval' expr =
-    match expr with
-    | Package id -> PackageId.Set.singleton (resolve id)
-    | Dependencies id ->
-      let pkg = EsyInstall.Solution.getExn (resolve id) solution in
-      pkg.dependencies
-    | DevDependencies id ->
-      let pkg = EsyInstall.Solution.getExn (resolve id) solution in
-      pkg.devDependencies
-    | Union (a, b) -> PackageId.Set.union (eval' a) (eval' b)
-  in
-  eval' depspec
+  let%expect_test _ =
+    parseAndPrint "dependencies(self)";
+    [%expect {| (Dependencies Self) |}]
 
-let rec collect' solution depspec seen id =
-  if PackageId.Set.mem id seen
-  then seen
-  else
-    let f nextid seen = collect' solution depspec seen nextid in
-    let seen = PackageId.Set.add id seen in
-    let seen = PackageId.Set.fold f (eval solution id depspec) seen in
-    seen
+  let%expect_test _ =
+    parseAndPrint "devDependencies(root)";
+    [%expect {| (DevDependencies Root) |}]
 
-let collect solution depspec root =
-  collect' solution depspec PackageId.Set.empty root
+  let%expect_test _ =
+    parseAndPrint "devDependencies(self)";
+    [%expect {| (DevDependencies Self) |}]
+
+  let%expect_test _ =
+    parseAndPrint "dependencies(root) + devDependencies(self)";
+    [%expect {| (Union (DevDependencies Self) (Dependencies Root)) |}]
+
+  let%expect_test _ =
+    parseAndPrint "name";
+    [%expect {| (Package (ByName name)) |}]
+
+  let%expect_test _ =
+    parseAndPrint "name-x";
+    [%expect {| (Package (ByName name-x)) |}]
+
+  let%expect_test _ =
+    parseAndPrint "name_x";
+    [%expect {| (Package (ByName name_x)) |}]
+
+  let%expect_test _ =
+    parseAndPrint "@scope/name";
+    [%expect {| (Package (ByName @scope/name)) |}]
+
+  let%expect_test _ =
+    parseAndPrint "@scope-x/name";
+    [%expect {| (Package (ByName @scope-x/name)) |}]
+
+  let%expect_test _ =
+    parseAndPrint "dependencies(@scope/root) + @scope/b";
+    [%expect {| (Union (Dependencies (ByName @scope/root)) (Package (ByName @scope/b))) |}]
+end)

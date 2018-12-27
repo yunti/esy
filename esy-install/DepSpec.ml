@@ -26,6 +26,7 @@ module type DEPSPEC = sig
 
   val compare : t -> t -> int
   val pp : Format.formatter -> t -> unit
+  val sexp_of_t : t -> Sexplib0.Sexp.t
 end
 
 module type ID = sig
@@ -33,16 +34,18 @@ module type ID = sig
 
   val compare : t -> t -> int
   val pp : Format.formatter -> t -> unit
+  val sexp_of_t : t -> Sexplib0.Sexp.t
 end
 
 module Make (Id : ID) : DEPSPEC with type id = Id.t = struct
+
   type id = Id.t
   type t =
     | Package of Id.t
     | Dependencies of Id.t
     | DevDependencies of Id.t
     | Union of t * t
-    [@@deriving ord]
+    [@@deriving ord, sexp_of]
 
   let package src = Package src
   let dependencies src = Dependencies src

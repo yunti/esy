@@ -1,4 +1,6 @@
 %token <string> ID
+%token AT
+%token SLASH
 %token PLUS
 %token LPAREN
 %token RPAREN
@@ -11,7 +13,7 @@
 %}
 
 %start start
-%type <DepSpec.t> start
+%type <DepSpecImpl.t> start
 
 %%
 
@@ -24,32 +26,31 @@ expr:
   | e = union { e }
 
 id:
-  id = ID; {
-    match id with
-    | "root" -> DepSpec.root
-    | "self" -> DepSpec.self
-    | _ -> $syntaxerror
-  }
+    id = ID; {
+      match id with
+      | "root" -> DepSpecImpl.root
+      | "self" -> DepSpecImpl.self
+      | name -> DepSpecImpl.name name
+    }
+  | AT; scope = ID; SLASH; name = ID; {
+      let name = "@" ^ scope ^ "/" ^ name in
+      DepSpecImpl.name name
+    }
 
 package:
-  id = ID; {
-    match id with
-    | "root" -> DepSpec.(package root)
-    | "self" -> DepSpec.(package self)
-    | _ -> $syntaxerror
-  }
+  id = id; { DepSpecImpl.package id }
 
 select:
   select = ID; LPAREN; id = id; RPAREN {
     match select with
-    | "dependencies" -> DepSpec.dependencies id
-    | "devDependencies" -> DepSpec.devDependencies id
+    | "dependencies" -> DepSpecImpl.dependencies id
+    | "devDependencies" -> DepSpecImpl.devDependencies id
     | _ -> $syntaxerror
   }
 
 union:
   a = expr; PLUS; b = expr {
-    DepSpec.(a + b)
+    DepSpecImpl.(a + b)
   }
 
 %%
