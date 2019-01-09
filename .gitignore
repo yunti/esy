@@ -1,5 +1,7 @@
 /bin/esy
+/bin/esydev
 /bin/esy.cmd
+/bin/esydev.cmd
 /node_modules
 /coverage
 /lib
